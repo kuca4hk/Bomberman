@@ -179,18 +179,18 @@ class BoomerManGame:
         self.player.update()
         
         if pygame.K_LEFT in self.keys_pressed or pygame.K_a in self.keys_pressed:
-            if self.player.move(-1, 0, self.game_map, self.grid_width, self.grid_height):
+            if self.player.move(-1, 0, self.game_map, self.grid_width, self.grid_height, self.bombs):
                 moving = True
                 self.player.set_facing_direction(-1)
         elif pygame.K_RIGHT in self.keys_pressed or pygame.K_d in self.keys_pressed:
-            if self.player.move(1, 0, self.game_map, self.grid_width, self.grid_height):
+            if self.player.move(1, 0, self.game_map, self.grid_width, self.grid_height, self.bombs):
                 moving = True
                 self.player.set_facing_direction(1)
         elif pygame.K_UP in self.keys_pressed or pygame.K_w in self.keys_pressed:
-            if self.player.move(0, -1, self.game_map, self.grid_width, self.grid_height):
+            if self.player.move(0, -1, self.game_map, self.grid_width, self.grid_height, self.bombs):
                 moving = True
         elif pygame.K_DOWN in self.keys_pressed or pygame.K_s in self.keys_pressed:
-            if self.player.move(0, 1, self.game_map, self.grid_width, self.grid_height):
+            if self.player.move(0, 1, self.game_map, self.grid_width, self.grid_height, self.bombs):
                 moving = True
         
         self.player.animate(moving)
@@ -205,6 +205,8 @@ class BoomerManGame:
             bomb = Bomb(bomb_pos[0], bomb_pos[1], self.iso_utils)
             self.bombs.add(bomb)
             self.all_sprites.add(bomb)
+            # Nastav pozici bomby pro bomb passing mechanismus
+            self.player.set_bomb_placed_position(bomb_pos[0], bomb_pos[1])
             # Mock zvukový efekt
             self.sound_effects['bomb_place']['active'] = True
             self.sound_effects['bomb_place']['timer'] = 20
