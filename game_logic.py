@@ -133,13 +133,14 @@ def check_collisions(player, enemies, explosions, lives, score):
         collision_occurred = True
         player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
 
-    # Kolize s explozemi pomocí pygame.sprite.spritecollide
+    # Kolize s explozemi pomocí grid pozice
     if not collision_occurred:
-        collided_explosions = pygame.sprite.spritecollide(player, explosions, False, pygame.sprite.collide_rect)
-        if collided_explosions:
-            lives -= 1
-            collision_occurred = True
-            player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
+        for explosion in explosions:
+            if explosion.grid_x == player.grid_x and explosion.grid_y == player.grid_y:
+                lives -= 1
+                collision_occurred = True
+                player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
+                break
 
     # Reset pozice hráče při kolizi
     if collision_occurred and lives > 0:
@@ -150,16 +151,17 @@ def check_collisions(player, enemies, explosions, lives, score):
 
 
 def check_enemy_explosions(enemies, explosions, score):
-    """Zkontroluje kolize nepřátel s explozemi pomocí pygame.sprite.collide"""
+    """Zkontroluje kolize nepřátel s explozemi pomocí grid pozice"""
     enemies_hit = []
 
     for enemy in enemies.copy():
-        # Použijeme pygame.sprite.spritecollide pro přesnější kolize
-        collided_explosions = pygame.sprite.spritecollide(enemy, explosions, False, pygame.sprite.collide_rect)
-        if collided_explosions:
-            enemy.kill()
-            enemies_hit.append(enemy)
-            score += 100
+        # Kontrola kolize pomocí grid pozice
+        for explosion in explosions:
+            if explosion.grid_x == enemy.grid_x and explosion.grid_y == enemy.grid_y:
+                enemy.kill()
+                enemies_hit.append(enemy)
+                score += 100
+                break
 
     return score, enemies_hit
 

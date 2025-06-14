@@ -196,3 +196,5 @@ cython_debug/
 /.idea/
 high_score.txt
 story_high_score.txt
+.venv
+venv
