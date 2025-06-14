@@ -126,12 +126,13 @@ def check_collisions(player, enemies, explosions, lives, score):
     if player.immunity_timer > 0:
         return lives, collision_occurred
 
-    # Kolize s nepřáteli pomocí pygame.sprite.spritecollide
-    collided_enemies = pygame.sprite.spritecollide(player, enemies, False, pygame.sprite.collide_rect)
-    if collided_enemies:
-        lives -= 1
-        collision_occurred = True
-        player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
+    # Kolize s nepřáteli pomocí grid pozice
+    for enemy in enemies:
+        if enemy.grid_x == player.grid_x and enemy.grid_y == player.grid_y:
+            lives -= 1
+            collision_occurred = True
+            player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
+            break
 
     # Kolize s explozemi pomocí grid pozice
     if not collision_occurred:
