@@ -195,3 +195,4 @@ cython_debug/
 .idea
 /.idea/
 high_score.txt
+story_high_score.txt

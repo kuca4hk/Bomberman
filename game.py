@@ -9,7 +9,8 @@ from domain.entity.player import Player
 from ui_components import GameState, Button
 from utils.isometric_utils import IsometricUtils
 from game_logic import (create_game_map, create_isometric_sprites, create_isometric_background, 
-                       explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks)
+                       explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks,
+                       create_story_map, STORY_TOTAL_LEVELS)
 
 
 class BoomerManGame:
@@ -35,6 +36,11 @@ class BoomerManGame:
         self.lives = 3
         self.high_score = self.load_high_score()
         
+        # Story mode
+        self.story_level = 1
+        self.story_high_score = self.load_story_high_score()
+        self.is_story_mode = False
+        
         self.font = pygame.font.Font(None, 36)
         self.big_font = pygame.font.Font(None, 72)
         
@@ -48,9 +54,11 @@ class BoomerManGame:
         self.bombs = pygame.sprite.Group()
         self.explosions = pygame.sprite.Group()
         
-        # UI tlačítka
-        self.play_button = Button(self.WIDTH//2 - 100, self.HEIGHT//2, 200, 60, 
-                                 "HRÁT", self.big_font, (50, 100, 50), (255, 255, 255))
+        # UI tlačítka pro menu
+        self.play_button = Button(self.WIDTH//2 - 100, self.HEIGHT//2 - 30, 200, 50, 
+                                 "HRÁT", self.font, (50, 100, 50), (255, 255, 255))
+        self.story_button = Button(self.WIDTH//2 - 100, self.HEIGHT//2 + 30, 200, 50, 
+                                  "STORY", self.font, (100, 50, 150), (255, 255, 255))
         
         # Victory screen tlačítka
         self.play_again_button = Button(self.WIDTH//2 - 200, self.HEIGHT//2 + 50, 180, 50, 
@@ -108,6 +116,8 @@ class BoomerManGame:
                 elif self.game_state == GameState.MENU_SCREEN:
                     if self.play_button.handle_event(event):
                         self.restart_game()
+                    elif self.story_button.handle_event(event):
+                        self.start_story_mode()
                 elif self.game_state == GameState.VICTORY:
                     if self.play_again_button.handle_event(event):
                         self.restart_game()
@@ -118,20 +128,29 @@ class BoomerManGame:
                         self.restart_game()
                     elif self.game_over_menu_button.handle_event(event):
                         self.game_state = GameState.MENU_SCREEN
+                elif self.game_state == GameState.STORY_COMPLETE:
+                    if self.play_again_button.handle_event(event):
+                        self.start_story_mode()
+                    elif self.menu_button.handle_event(event):
+                        self.game_state = GameState.MENU_SCREEN
             elif event.type == pygame.MOUSEMOTION:
                 if self.game_state == GameState.MENU_SCREEN:
                     self.play_button.handle_event(event)
+                    self.story_button.handle_event(event)
                 elif self.game_state == GameState.VICTORY:
                     self.play_again_button.handle_event(event)
                     self.menu_button.handle_event(event)
                 elif self.game_state == GameState.GAME_OVER:
                     self.restart_button.handle_event(event)
                     self.game_over_menu_button.handle_event(event)
+                elif self.game_state == GameState.STORY_COMPLETE:
+                    self.play_again_button.handle_event(event)
+                    self.menu_button.handle_event(event)
             elif event.type == pygame.KEYDOWN:
                 self.keys_pressed.add(event.key)
                 if self.game_state == GameState.MENU and event.key == pygame.K_SPACE:
                     self.game_state = GameState.PLAYING
-                elif self.game_state == GameState.PLAYING and event.key == pygame.K_SPACE:
+                elif (self.game_state == GameState.PLAYING or self.game_state == GameState.STORY_PLAYING) and event.key == pygame.K_SPACE:
                     self.place_bomb()
             elif event.type == pygame.KEYUP:
                 self.keys_pressed.discard(event.key)
@@ -148,7 +167,7 @@ class BoomerManGame:
             if time.time() - self.intro_start_time > 3:
                 self.game_state = GameState.MENU_SCREEN
         
-        elif self.game_state == GameState.PLAYING:
+        elif self.game_state == GameState.PLAYING or self.game_state == GameState.STORY_PLAYING:
             self.update_player()
             self.update_sprites()
             self.check_game_collisions()
@@ -231,10 +250,25 @@ class BoomerManGame:
         
         # Kontrola vítězství - žádné zničitelné bloky
         if count_destructible_blocks(self.game_map) == 0:
-            if self.score > self.high_score:
-                self.high_score = self.score
-                self.save_high_score()
-            self.game_state = GameState.VICTORY
+            if self.game_state == GameState.STORY_PLAYING:
+                # Story mode - pokračuj na další level nebo ukonči
+                self.story_level += 1
+                if self.story_level > STORY_TOTAL_LEVELS:
+                    # Dokončena celá story
+                    if self.score > self.story_high_score:
+                        self.story_high_score = self.score
+                        self.save_story_high_score()
+                    self.game_state = GameState.STORY_COMPLETE
+                else:
+                    # Pokračuj na další level
+                    self.clear_sprites()
+                    self.init_story_level()
+            else:
+                # Normální mode
+                if self.score > self.high_score:
+                    self.high_score = self.score
+                    self.save_high_score()
+                self.game_state = GameState.VICTORY
     
     def update_explosions(self):
         # Update částic
@@ -263,12 +297,14 @@ class BoomerManGame:
             self.draw_menu_screen()
         elif self.game_state == GameState.MENU:
             self.draw_menu()
-        elif self.game_state == GameState.PLAYING:
+        elif self.game_state == GameState.PLAYING or self.game_state == GameState.STORY_PLAYING:
             self.draw_game()
         elif self.game_state == GameState.GAME_OVER:
             self.draw_game_over()
         elif self.game_state == GameState.VICTORY:
             self.draw_victory()
+        elif self.game_state == GameState.STORY_COMPLETE:
+            self.draw_story_complete()
         
         pygame.display.flip()
     
@@ -322,8 +358,9 @@ class BoomerManGame:
         title_rect = title.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 150))
         self.screen.blit(title, title_rect)
         
-        # Kreslení tlačítka
+        # Kreslení tlačítek
         self.play_button.draw(self.screen)
+        self.story_button.draw(self.screen)
         
         # Ovládání
         controls = self.font.render("WASD/šipky - pohyb, MEZERNÍK - bomba", True, (200, 200, 200))
@@ -417,6 +454,11 @@ class BoomerManGame:
         lives_text = self.font.render(f"Životy: {self.lives}", True, (255, 100, 100))
         self.screen.blit(lives_text, (20, 50))
         
+        # Story mode UI - zobraz level informace
+        if self.game_state == GameState.STORY_PLAYING:
+            level_text = self.font.render(f"Level: {self.story_level}/{STORY_TOTAL_LEVELS}", True, (255, 255, 255))
+            self.screen.blit(level_text, (220, 20))
+        
         # Progress bar pro bomby
         if len(self.bombs) > 0:
             bomb_timer = min(bomb.timer for bomb in self.bombs)
@@ -470,10 +512,24 @@ class BoomerManGame:
         except:
             pass
     
-    def restart_game(self):
-        """Restartuje hru"""
-        self.score = 0
-        self.lives = 3
+    def load_story_high_score(self):
+        """Načte nejlepší story skóre ze souboru"""
+        try:
+            with open('story_high_score.txt', 'r') as f:
+                return int(f.read().strip())
+        except:
+            return 0
+    
+    def save_story_high_score(self):
+        """Uloží nejlepší story skóre do souboru"""
+        try:
+            with open('story_high_score.txt', 'w') as f:
+                f.write(str(self.story_high_score))
+        except:
+            pass
+    
+    def clear_sprites(self):
+        """Vymaže všechny sprite skupiny"""
         self.all_sprites.empty()
         self.players.empty()
         self.enemies.empty()
@@ -481,8 +537,68 @@ class BoomerManGame:
         self.explosions.empty()
         self.explosion_particles = []
         self.screen_shake = 0
+
+    def restart_game(self):
+        """Restartuje hru"""
+        self.score = 0
+        self.lives = 3
+        self.clear_sprites()
         self.init_game_world()
         self.game_state = GameState.PLAYING
+    
+    def start_story_mode(self):
+        """Začne Story mode"""
+        self.score = 0
+        self.lives = 3
+        self.story_level = 1
+        self.is_story_mode = True
+        self.all_sprites.empty()
+        self.players.empty()
+        self.enemies.empty()
+        self.bombs.empty()
+        self.explosions.empty()
+        self.explosion_particles = []
+        self.screen_shake = 0
+        self.init_story_level()
+        self.game_state = GameState.STORY_PLAYING
+    
+    def init_story_level(self):
+        """Inicializuje nový level pro Story mode"""
+        self.grid_width = 15
+        self.grid_height = 11
+        
+        # Vytvoření story mapy podle levelu
+        self.game_map = create_story_map(self.story_level, self.grid_width, self.grid_height)
+        
+        # Vytvoření hráče
+        self.player = Player(1, 1, self.iso_utils)
+        self.all_sprites.add(self.player)
+        self.players.add(self.player)
+        
+        # Nepřátelé - počet se zvyšuje s levelem
+        enemy_count = min(3, 1 + (self.story_level - 1) // 2)
+        enemy_positions = [(self.grid_width-2, self.grid_height-2), 
+                          (self.grid_width-2, 2), (2, self.grid_height-2)]
+        
+        for i in range(enemy_count):
+            if i < len(enemy_positions):
+                x, y = enemy_positions[i]
+                enemy = Enemy(x, y, self.iso_utils)
+                self.all_sprites.add(enemy)
+                self.enemies.add(enemy)
+        
+        # Inicializace efektů
+        self.bomb_pulse_timer = 0
+        self.explosion_particles = []
+        self.screen_shake = 0
+        
+        # Mock zvukové efekty
+        self.sound_effects = {
+            'bomb_place': {'active': False, 'timer': 0},
+            'explosion': {'active': False, 'timer': 0},
+            'enemy_hit': {'active': False, 'timer': 0},
+            'player_hit': {'active': False, 'timer': 0}
+        }
     
     def draw_game_over(self):
         # Tmavé pozadí s červenými blesky
@@ -597,6 +713,69 @@ class BoomerManGame:
         
         # Gratuláční text
         congrats_text = self.font.render("Zničili jste všechny překážky!", True, (255, 255, 255))
+        congrats_rect = congrats_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 + 120))
+        self.screen.blit(congrats_text, congrats_rect)
+    
+    def draw_story_complete(self):
+        # Úžasné pozadí s duhovými vlnami
+        for y in range(self.HEIGHT):
+            wave1 = math.sin(y * 0.01 + time.time() * 2) * 30 + 30
+            wave2 = math.cos(y * 0.015 + time.time() * 1.5) * 20 + 20
+            color_r = int(100 + wave1)
+            color_g = int(50 + wave2) 
+            color_b = int(150 + math.sin(y * 0.02 + time.time()) * 50)
+            pygame.draw.line(self.screen, (color_r, color_g, color_b), (0, y), (self.WIDTH, y))
+        
+        # Padající hvězdy efekt
+        for i in range(100):
+            x = (i * 37 + int(time.time() * 80)) % self.WIDTH
+            y = (i * 71 + int(time.time() * 60)) % self.HEIGHT
+            size = (i % 4) + 2
+            brightness = (math.sin(i + time.time() * 3) + 1) * 127.5
+            color = (int(brightness), int(brightness), 255)
+            pygame.draw.circle(self.screen, color, (x, y), size)
+        
+        # Pulsující story complete text
+        pulse = math.sin(time.time() * 2) * 0.4 + 1
+        font_size = int(72 * pulse)
+        pulse_font = pygame.font.Font(None, font_size)
+        
+        # Stín
+        shadow = pulse_font.render("STORY DOKONČENA!", True, (50, 0, 100))
+        shadow_rect = shadow.get_rect(center=(self.WIDTH//2 + 3, self.HEIGHT//2 - 97))
+        self.screen.blit(shadow, shadow_rect)
+        
+        # Hlavní text
+        complete_text = pulse_font.render("STORY DOKONČENA!", True, (200, 100, 255))
+        complete_rect = complete_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 100))
+        self.screen.blit(complete_text, complete_rect)
+        
+        # Skóre s rámečkem
+        score_bg = pygame.Surface((350, 80), pygame.SRCALPHA)
+        score_bg.fill((50, 50, 50, 200))
+        pygame.draw.rect(score_bg, (200, 100, 255), (0, 0, 350, 80), 3)
+        score_bg_rect = score_bg.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 20))
+        self.screen.blit(score_bg, score_bg_rect)
+        
+        # Finální skóre
+        final_score_text = self.font.render(f"Finální skóre: {self.score}", True, (255, 255, 255))
+        final_score_rect = final_score_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 35))
+        self.screen.blit(final_score_text, final_score_rect)
+        
+        # Story nejlepší skóre
+        if self.score == self.story_high_score and self.score > 0:
+            high_score_text = self.font.render("🏆 NOVÝ STORY REKORD! 🏆", True, (200, 100, 255))
+        else:
+            high_score_text = self.font.render(f"Story rekord: {self.story_high_score}", True, (200, 200, 200))
+        high_score_rect = high_score_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 5))
+        self.screen.blit(high_score_text, high_score_rect)
+        
+        # Kreslení tlačítek
+        self.play_again_button.draw(self.screen)
+        self.menu_button.draw(self.screen)
+        
+        # Gratuláční text
+        congrats_text = self.font.render(f"Prošli jste všech {STORY_TOTAL_LEVELS} levelů!", True, (255, 255, 255))
         congrats_rect = congrats_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 + 120))
         self.screen.blit(congrats_text, congrats_rect)
     

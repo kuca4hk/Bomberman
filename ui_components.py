@@ -9,6 +9,9 @@ class GameState(Enum):
     PLAYING = 4
     GAME_OVER = 5
     VICTORY = 6
+    STORY_PLAYING = 7
+    STORY_COMPLETE = 8
+    STORY_GAME_OVER = 9
 
 
 class Button:
