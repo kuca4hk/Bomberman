@@ -28,14 +28,33 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.centerx = screen_x + offset_x
         self.rect.bottom = screen_y + offset_y - float_offset
 
-    def update(self, game_map, grid_width, grid_height):
+    def update(self, game_map, grid_width, grid_height, player):
         self.animation_frame += 0.2
         self.move_timer += 1
 
-        if self.move_timer > 60:
+        if self.move_timer > 10:
             self.move_timer = 0
-            directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-            dx, dy = random.choice(directions)
+            dx=0
+            dy=0
+            x_dist=self.grid_x-player.grid_x
+            y_dist=self.grid_y-player.grid_y
+
+            if random.random()<0.5:
+                if x_dist>0:
+                    dx=-1
+                else:
+                    dx=1
+            else:
+                if y_dist>0:
+                    dy=-1
+                else:
+                    dy=1
+
+
+            #if self.grid_y>player.grid_y:
+            #    dy=-1
+            #else:
+            #    dy=1
             new_x = self.grid_x + dx
             new_y = self.grid_y + dy
 
