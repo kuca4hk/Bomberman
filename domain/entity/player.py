@@ -13,6 +13,8 @@ class Player(pygame.sprite.Sprite):
         self.facing_direction = 1  # 1 for right, -1 for left
         self.immunity_timer = 0  # Imunita po zásahu
         self.bomb_placed_position = None  # Pozice kde hráč položil bombu (může z ní odejít)
+        self.max_bombs = 1  # Počet bomb které může hráč mít současně
+        self.current_bomb_count = 0  # Aktuální počet položených bomb
         self.create_sprite()
 
     def create_sprite(self):
@@ -85,3 +87,23 @@ class Player(pygame.sprite.Sprite):
     def set_bomb_placed_position(self, x, y):
         """Nastaví pozici kde hráč položil bombu"""
         self.bomb_placed_position = (x, y)
+    
+    def can_place_bomb(self):
+        """Zkontroluje zda může hráč položit bombu"""
+        return self.current_bomb_count < self.max_bombs
+    
+    def add_bomb(self):
+        """Zvýší počet položených bomb"""
+        if self.current_bomb_count < self.max_bombs:
+            self.current_bomb_count += 1
+            return True
+        return False
+    
+    def remove_bomb(self):
+        """Sníží počet bomb po explozi"""
+        if self.current_bomb_count > 0:
+            self.current_bomb_count -= 1
+    
+    def set_max_bombs_for_level(self, level):
+        """Nastaví maximální počet bomb podle levelu"""
+        self.max_bombs = min(5, level)  # Level 1: 1 bomba, Level 2: 2 bomby, Level 3: 3 bomby, atd. max 5

@@ -196,6 +196,10 @@ class BoomerManGame:
         self.player.animate(moving)
     
     def place_bomb(self):
+        # Zkontroluj, jestli hráč může položit bombu (limit podle levelu)
+        if not self.player.can_place_bomb():
+            return
+            
         bomb_pos = (self.player.grid_x, self.player.grid_y)
         # Zkontroluj, jestli na pozici už není bomba
         bomb_exists = any(bomb.grid_x == bomb_pos[0] and bomb.grid_y == bomb_pos[1] 
@@ -205,6 +209,8 @@ class BoomerManGame:
             bomb = Bomb(bomb_pos[0], bomb_pos[1], self.iso_utils)
             self.bombs.add(bomb)
             self.all_sprites.add(bomb)
+            # Přidej bombu do počítadla hráče
+            self.player.add_bomb()
             # Nastav pozici bomby pro bomb passing mechanismus
             self.player.set_bomb_placed_position(bomb_pos[0], bomb_pos[1])
             # Mock zvukový efekt
@@ -223,6 +229,8 @@ class BoomerManGame:
                 self.screen_shake = 8
                 self.sound_effects['explosion']['active'] = True
                 self.sound_effects['explosion']['timer'] = 30
+                # Sníž počítadlo bomb u hráče po explozi
+                self.player.remove_bomb()
                 bomb.kill()
         
         # Update explosion sprites
@@ -460,11 +468,14 @@ class BoomerManGame:
         if self.game_state == GameState.STORY_PLAYING:
             level_text = self.font.render(f"Level: {self.story_level}/{STORY_TOTAL_LEVELS}", True, (255, 255, 255))
             self.screen.blit(level_text, (220, 20))
+            # Zobraz info o bombách
+            bombs_text = self.font.render(f"Bomby: {self.player.current_bomb_count}/{self.player.max_bombs}", True, (255, 200, 100))
+            self.screen.blit(bombs_text, (220, 50))
         
         # Progress bar pro bomby
         if len(self.bombs) > 0:
             bomb_timer = min(bomb.timer for bomb in self.bombs)
-            progress = bomb_timer / 180.0
+            progress = bomb_timer / 75.0
             pygame.draw.rect(self.screen, (100, 0, 0), (20, 75, 160, 10))
             pygame.draw.rect(self.screen, (255, 0, 0), (20, 75, int(160 * progress), 10))
         
@@ -574,6 +585,8 @@ class BoomerManGame:
         
         # Vytvoření hráče
         self.player = Player(1, 1, self.iso_utils)
+        # Nastaví počet bomb podle levelu
+        self.player.set_max_bombs_for_level(self.story_level)
         self.all_sprites.add(self.player)
         self.players.add(self.player)
         

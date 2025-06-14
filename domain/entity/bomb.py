@@ -9,7 +9,7 @@ class Bomb(pygame.sprite.Sprite):
         self.grid_x = x
         self.grid_y = y
         self.z = 0
-        self.timer = 180
+        self.timer = 75  # 5 sekund při 15 FPS
         self.power = power
         self.animation_frame = 0
         self.create_sprite()
@@ -25,7 +25,7 @@ class Bomb(pygame.sprite.Sprite):
         offset_x, offset_y = self.iso_utils.get_tile_center_offset()
         
         # Jemné pulsování místo skákání
-        time_left = self.timer / 180.0
+        time_left = self.timer / 75.0
         pulse_intensity = (1.0 - time_left) * 0.5  # Čím méně času, tím větší pulsování
         pulse = math.sin(self.animation_frame * 0.3) * pulse_intensity
         
