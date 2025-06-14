@@ -193,4 +193,4 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 .idea
-high_score.txt
+/.idea/
