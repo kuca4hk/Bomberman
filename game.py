@@ -232,7 +232,7 @@ class BoomerManGame:
         
         # Update enemy sprites
         for enemy in self.enemies:
-            enemy.update(self.game_map, self.grid_width, self.grid_height, self.player)
+            enemy.update(self.game_map, self.grid_width, self.grid_height, self.player, pygame.sprite.Group(self.bombs, self.explosions))
     
     def check_game_collisions(self):
         # Kolize hráče

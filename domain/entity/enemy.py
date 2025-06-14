@@ -28,33 +28,42 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.centerx = screen_x + offset_x
         self.rect.bottom = screen_y + offset_y - float_offset
 
-    def update(self, game_map, grid_width, grid_height, player):
+    def update(self, game_map, grid_width, grid_height, player, dangers):
         self.animation_frame += 0.2
         self.move_timer += 1
 
         if self.move_timer > 10:
             self.move_timer = 0
-            dx=0
-            dy=0
-            x_dist=self.grid_x-player.grid_x
-            y_dist=self.grid_y-player.grid_y
+            bomb_proximity = 4
+            dx = 0
+            dy = 0
 
-            if random.random()<0.5:
-                if x_dist>0:
-                    dx=-1
+            # pronásledování hráče
+            if random.random() < 0.5:
+                if self.grid_x - player.grid_x > 0:
+                    dx = -1
                 else:
-                    dx=1
+                    dx = 1
             else:
-                if y_dist>0:
-                    dy=-1
+                if self.grid_y - player.grid_y > 0:
+                    dy = -1
                 else:
-                    dy=1
+                    dy = 1
 
+            for danger in dangers:
+                # jestli utíkat
+                if abs(self.grid_x - danger.grid_x) < bomb_proximity and abs(self.grid_y - danger.grid_y) < bomb_proximity:
+                    # kudy utíkat
+                    if self.grid_x - danger.grid_x > 0:
+                        dx = 1
+                    else:
+                        dx = -1
+                    if self.grid_y - danger.grid_y > 0:
+                        dy = 1
+                    else:
+                        dy = -1
+                    break
 
-            #if self.grid_y>player.grid_y:
-            #    dy=-1
-            #else:
-            #    dy=1
             new_x = self.grid_x + dx
             new_y = self.grid_y + dy
 
