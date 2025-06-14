@@ -28,7 +28,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.centerx = screen_x + offset_x
         self.rect.bottom = screen_y + offset_y - float_offset
 
-    def update(self, game_map, grid_width, grid_height):
+    def update(self, game_map, grid_width, grid_height, bombs=None):
         self.animation_frame += 0.2
         self.move_timer += 1
 
@@ -39,10 +39,22 @@ class Enemy(pygame.sprite.Sprite):
             new_x = self.grid_x + dx
             new_y = self.grid_y + dy
 
+            # Kontrola hranic a stěn
             if (0 <= new_x < grid_width and 0 <= new_y < grid_height and
                     game_map[new_y, new_x] == 0):
-                self.grid_x = new_x
-                self.grid_y = new_y
+                
+                # Kontrola bomb - enemy nemůže projít políčkem s bombou
+                bomb_collision = False
+                if bombs:
+                    for bomb in bombs:
+                        if bomb.grid_x == new_x and bomb.grid_y == new_y:
+                            bomb_collision = True
+                            break
+                
+                # Pohni se pouze pokud není bomba na cílovém políčku
+                if not bomb_collision:
+                    self.grid_x = new_x
+                    self.grid_y = new_y
 
         # Aktualizuj sprite pro animaci
         self.create_sprite()
