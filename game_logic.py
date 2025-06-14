@@ -1,8 +1,8 @@
 import numpy as np
 import pygame
 import random
-from entities import Explosion
-from isometric_utils import IsometricUtils
+
+from domain.entity.explosion import Explosion
 
 
 def create_game_map(grid_width, grid_height):

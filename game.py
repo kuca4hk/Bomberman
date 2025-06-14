@@ -2,11 +2,13 @@ import pygame
 import time
 import math
 import random
-from entities import Player, Enemy, Bomb
+
+from domain.entity.bomb import Bomb
+from domain.entity.enemy import Enemy
+from domain.entity.player import Player
 from ui_components import GameState, Button
 from game_logic import (create_game_map, create_isometric_sprites, create_isometric_background, 
                        explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks)
-from isometric_utils import IsometricUtils
 
 
 class BoomerManGame:
