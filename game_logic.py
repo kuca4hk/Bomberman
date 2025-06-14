@@ -1,53 +1,53 @@
 import numpy as np
 import pygame
 import random
-
 from domain.entity.explosion import Explosion
+from utils.isometric_utils import IsometricUtils
 
 
 def create_game_map(grid_width, grid_height):
     """Vytvoří herní mapu s stěnami a zničitelnými objekty"""
     game_map = np.zeros((grid_height, grid_width), dtype=int)
-    
+
     # 0 = prázdné, 1 = stěna, 2 = zničitelná stěna
     # Okraje jsou stěny
     game_map[0, :] = 1
     game_map[-1, :] = 1
     game_map[:, 0] = 1
     game_map[:, -1] = 1
-    
+
     # Vnitřní stěny (každý druhý sudý řádek a sloupec)
-    for i in range(2, grid_height-1, 2):
-        for j in range(2, grid_width-1, 2):
+    for i in range(2, grid_height - 1, 2):
+        for j in range(2, grid_width - 1, 2):
             game_map[i, j] = 1
-    
+
     # Náhodné zničitelné stěny
-    for i in range(1, grid_height-1):
-        for j in range(1, grid_width-1):
+    for i in range(1, grid_height - 1):
+        for j in range(1, grid_width - 1):
             if game_map[i, j] == 0 and np.random.random() < 0.3:
                 # Nechat volné místo kolem hráče
                 if not (i <= 2 and j <= 2):
                     game_map[i, j] = 2
-    
+
     return game_map
 
 
 def create_isometric_sprites(iso_utils):
     """Vytvoří isometrické sprite objekty pro různé herní prvky"""
     sprites = {}
-    
+
     # Stěna - kamenný blok
     sprites['wall'] = iso_utils.create_isometric_cube((120, 120, 120), 1)
-    
+
     # Zničitelná stěna - cihlový blok
     sprites['brick'] = iso_utils.create_isometric_cube((139, 69, 19), 1)
-    
+
     # Bomba pro dekorace
     sprites['bomb'] = iso_utils.create_bomb_sprite()
-    
+
     # Podlaha
     sprites['floor'] = iso_utils.create_isometric_tile((60, 80, 40), 1, False)
-    
+
     return sprites
 
 
@@ -57,7 +57,7 @@ def create_isometric_background(screen_width, screen_height):
     # Gradient background
     for y in range(screen_height):
         color_val = int(30 + (y / screen_height) * 40)
-        color = (color_val//2, color_val, color_val//3)
+        color = (color_val // 2, color_val, color_val // 3)
         pygame.draw.line(bg_surface, color, (0, y), (screen_width, y))
     return bg_surface
 
@@ -68,12 +68,12 @@ def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_
     power = bomb.power
     explosion_particles = []
     score_gained = 0
-    
+
     # Střed exploze
     explosion = Explosion(x, y, iso_utils)
     explosions_group.add(explosion)
     all_sprites_group.add(explosion)
-    
+
     # Exploze ve všech směrech
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     for dx, dy in directions:
@@ -100,49 +100,55 @@ def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_
                 explosion = Explosion(nx, ny, iso_utils)
                 explosions_group.add(explosion)
                 all_sprites_group.add(explosion)
-    
+
     return explosion_particles, score_gained
 
 
 def check_collisions(player, enemies, explosions, lives, score):
-    """Zkontroluje kolize mezi hráčem a nepřáteli/explozemi"""
+    """Zkontroluje kolize mezi hráčem a nepřáteli/explozemi pomocí pygame.sprite.collide"""
     collision_occurred = False
-    
-    # Kolize s nepřáteli
-    for enemy in enemies:
-        if player.grid_x == enemy.grid_x and player.grid_y == enemy.grid_y:
+
+    # Zkontroluj imunitu hráče
+    if player.immunity_timer > 0:
+        return lives, collision_occurred
+
+    # Kolize s nepřáteli pomocí pygame.sprite.spritecollide
+    collided_enemies = pygame.sprite.spritecollide(player, enemies, False, pygame.sprite.collide_rect)
+    if collided_enemies:
+        lives -= 1
+        collision_occurred = True
+        player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
+        print(f"Hráč zasažen nepřítelem! Imunita aktivována na {player.immunity_timer} framů")
+
+    # Kolize s explozemi pomocí pygame.sprite.spritecollide
+    if not collision_occurred:
+        collided_explosions = pygame.sprite.spritecollide(player, explosions, False, pygame.sprite.collide_rect)
+        if collided_explosions:
             lives -= 1
             collision_occurred = True
-            break
-    
-    # Kolize s explozemi
-    if not collision_occurred:
-        for explosion in explosions:
-            if player.grid_x == explosion.grid_x and player.grid_y == explosion.grid_y:
-                lives -= 1
-                collision_occurred = True
-                break
-    
+            player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
+            print(f"Hráč zasažen explozí! Imunita aktivována na {player.immunity_timer} framů")
+
     # Reset pozice hráče při kolizi
     if collision_occurred and lives > 0:
         player.grid_x, player.grid_y = 1, 1
         player.update_position()
-    
+
     return lives, collision_occurred
 
 
 def check_enemy_explosions(enemies, explosions, score):
-    """Zkontroluje kolize nepřátel s explozemi"""
+    """Zkontroluje kolize nepřátel s explozemi pomocí pygame.sprite.collide"""
     enemies_hit = []
-    
+
     for enemy in enemies.copy():
-        for explosion in explosions:
-            if enemy.grid_x == explosion.grid_x and enemy.grid_y == explosion.grid_y:
-                enemy.kill()
-                enemies_hit.append(enemy)
-                score += 100
-                break
-    
+        # Použijeme pygame.sprite.spritecollide pro přesnější kolize
+        collided_explosions = pygame.sprite.spritecollide(enemy, explosions, False, pygame.sprite.collide_rect)
+        if collided_explosions:
+            enemy.kill()
+            enemies_hit.append(enemy)
+            score += 100
+
     return score, enemies_hit
 
 

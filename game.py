@@ -7,6 +7,7 @@ from domain.entity.bomb import Bomb
 from domain.entity.enemy import Enemy
 from domain.entity.player import Player
 from ui_components import GameState, Button
+from utils.isometric_utils import IsometricUtils
 from game_logic import (create_game_map, create_isometric_sprites, create_isometric_background, 
                        explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks)
 
@@ -154,6 +155,9 @@ class BoomerManGame:
     
     def update_player(self):
         moving = False
+        
+        # Update hráče (pro imunitu)
+        self.player.update()
         
         if pygame.K_LEFT in self.keys_pressed or pygame.K_a in self.keys_pressed:
             if self.player.move(-1, 0, self.game_map, self.grid_width, self.grid_height):
@@ -400,10 +404,11 @@ class BoomerManGame:
         # Kreslení částic
         self.update_explosions()
         
-        # Fancy UI s pozadím
-        ui_bg = pygame.Surface((200, 80), pygame.SRCALPHA)
+        # Fancy UI s pozadím - větší pro immunity bar
+        ui_height = 125 if self.player.immunity_timer > 0 else 90
+        ui_bg = pygame.Surface((200, ui_height), pygame.SRCALPHA)
         ui_bg.fill((0, 0, 0, 150))
-        pygame.draw.rect(ui_bg, (100, 100, 100), (0, 0, 200, 80), 2)
+        pygame.draw.rect(ui_bg, (100, 100, 100), (0, 0, 200, ui_height), 2)
         self.screen.blit(ui_bg, (10, 10))
         
         score_text = self.font.render(f"Skóre: {self.score}", True, (255, 255, 0))
@@ -419,8 +424,18 @@ class BoomerManGame:
             pygame.draw.rect(self.screen, (100, 0, 0), (20, 75, 160, 10))
             pygame.draw.rect(self.screen, (255, 0, 0), (20, 75, int(160 * progress), 10))
         
+        # Progress bar pro imunitu hráče
+        if self.player.immunity_timer > 0:
+            immunity_progress = self.player.immunity_timer / 120.0
+            pygame.draw.rect(self.screen, (0, 0, 100), (20, 90, 160, 10))
+            pygame.draw.rect(self.screen, (0, 150, 255), (20, 90, int(160 * immunity_progress), 10))
+            
+            # Text pro imunitu
+            immunity_text = self.font.render("Imunita", True, (0, 150, 255))
+            self.screen.blit(immunity_text, (20, 105))
+        
         # Mock vizuální indikace zvukových efektů
-        effect_y = 95
+        effect_y = 130 if self.player.immunity_timer > 0 else 95
         for effect_name, effect in self.sound_effects.items():
             if effect['active']:
                 alpha = min(255, effect['timer'] * 12)

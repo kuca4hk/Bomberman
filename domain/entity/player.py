@@ -11,10 +11,18 @@ class Player(pygame.sprite.Sprite):
         self.animation_frame = 0
         self.animation_timer = 0
         self.facing_direction = 1  # 1 for right, -1 for left
+        self.immunity_timer = 0  # Imunita po zásahu
         self.create_sprite()
 
     def create_sprite(self):
-        self.image = self.iso_utils.create_character_sprite((0, 150, 255))
+        # Změna barvy při immunitě (blikání)
+        if self.immunity_timer > 0 and (self.immunity_timer // 5) % 2:
+            # Blikání - průhlednější barva
+            self.image = self.iso_utils.create_character_sprite((0, 100, 200))
+        else:
+            # Normální barva
+            self.image = self.iso_utils.create_character_sprite((0, 150, 255))
+        
         if self.facing_direction == -1:
             self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
@@ -46,6 +54,15 @@ class Player(pygame.sprite.Sprite):
         if moving and self.animation_timer > 5:
             self.animation_frame = (self.animation_frame + 1) % 4
             self.animation_timer = 0
+    
+    def update(self):
+        if self.immunity_timer > 0:
+            self.immunity_timer -= 1
+            # Aktualizuj sprite pro blikání
+            self.create_sprite()
+            # Debug výpis každých 30 framů
+            if self.immunity_timer % 30 == 0:
+                print(f"Imunita zbývá: {self.immunity_timer} framů")
 
     def set_facing_direction(self, direction):
         if self.facing_direction != direction:
