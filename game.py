@@ -272,6 +272,7 @@ class BoomerManGame:
                     self.game_state = GameState.STORY_COMPLETE
                 else:
                     # Pokračuj na další level
+                    self.biome = None
                     self.clear_sprites()
                     self.init_story_level()
             else:
@@ -573,6 +574,7 @@ class BoomerManGame:
         self.score = 0
         self.lives = 3
         self.clear_sprites()
+        self.biome = None
         self.init_game_world()
         self.game_state = GameState.PLAYING
 
