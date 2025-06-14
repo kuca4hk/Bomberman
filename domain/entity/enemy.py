@@ -14,7 +14,9 @@ class Enemy(pygame.sprite.Sprite):
         self.create_sprite()
 
     def create_sprite(self):
-        self.image = self.iso_utils.create_character_sprite((200, 50, 50))
+        # Použij animaci frame pro sprite
+        frame = int(self.animation_frame) % 4
+        self.image = self.iso_utils.create_enemy_sprite(enemy_type=0, frame=frame)
         self.rect = self.image.get_rect()
         self.update_position()
 
@@ -42,4 +44,5 @@ class Enemy(pygame.sprite.Sprite):
                 self.grid_x = new_x
                 self.grid_y = new_y
 
-        self.update_position()
+        # Aktualizuj sprite pro animaci
+        self.create_sprite()

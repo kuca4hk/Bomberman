@@ -11,29 +11,31 @@ class Bomb(pygame.sprite.Sprite):
         self.z = 0
         self.timer = 180
         self.power = power
-        self.pulse_timer = 0
-        self.pulse_scale = 1.0
+        self.animation_frame = 0
         self.create_sprite()
 
     def create_sprite(self):
-        self.image = self.iso_utils.create_bomb_sprite(self.pulse_scale)
+        # Použij animation_frame pro smooth animaci místo skákání
+        self.image = self.iso_utils.create_bomb_sprite(self.animation_frame)
         self.rect = self.image.get_rect()
         self.update_position()
 
     def update_position(self):
         screen_x, screen_y = self.iso_utils.grid_to_screen(self.grid_x, self.grid_y, self.z)
         offset_x, offset_y = self.iso_utils.get_tile_center_offset()
+        
+        # Jemné pulsování místo skákání
+        time_left = self.timer / 180.0
+        pulse_intensity = (1.0 - time_left) * 0.5  # Čím méně času, tím větší pulsování
+        pulse = math.sin(self.animation_frame * 0.3) * pulse_intensity
+        
         self.rect.centerx = screen_x + offset_x
-        self.rect.bottom = screen_y + offset_y
+        self.rect.bottom = screen_y + offset_y + int(pulse * 2)  # Jemné vertikální pulsování
 
     def update(self):
         self.timer -= 1
-        self.pulse_timer += 1
+        self.animation_frame += 1
 
-        # Pulsing animation
-        time_factor = self.timer / 180.0
-        pulse_speed = 10 - time_factor * 8
-        self.pulse_scale = 0.8 + math.sin(self.pulse_timer / pulse_speed) * 0.3
-
+        # Aktualizuj sprite
         self.create_sprite()
         return self.timer <= 0
