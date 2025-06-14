@@ -144,3 +144,8 @@ def check_enemy_explosions(enemies, explosions, score):
                 break
     
     return score, enemies_hit
+
+
+def count_destructible_blocks(game_map):
+    """Spočítá počet zbývajících zničitelných bloků (hodnota 2) na mapě"""
+    return np.sum(game_map == 2)

@@ -5,7 +5,7 @@ import random
 from entities import Player, Enemy, Bomb
 from ui_components import GameState, Button
 from game_logic import (create_game_map, create_isometric_sprites, create_isometric_background, 
-                       explode_bomb, check_collisions, check_enemy_explosions)
+                       explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks)
 from isometric_utils import IsometricUtils
 
 
@@ -14,7 +14,7 @@ class BoomerManGame:
         pygame.init()
         self.WIDTH = 1000
         self.HEIGHT = 700
-        self.FPS = 60
+        self.FPS = 15
         
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Boomer Man - Isometric 3D")
@@ -30,6 +30,7 @@ class BoomerManGame:
         self.intro_start_time = time.time()
         self.score = 0
         self.lives = 3
+        self.high_score = self.load_high_score()
         
         self.font = pygame.font.Font(None, 36)
         self.big_font = pygame.font.Font(None, 72)
@@ -47,6 +48,18 @@ class BoomerManGame:
         # UI tlačítka
         self.play_button = Button(self.WIDTH//2 - 100, self.HEIGHT//2, 200, 60, 
                                  "HRÁT", self.big_font, (50, 100, 50), (255, 255, 255))
+        
+        # Victory screen tlačítka
+        self.play_again_button = Button(self.WIDTH//2 - 200, self.HEIGHT//2 + 50, 180, 50, 
+                                       "Hrát znova", self.font, (50, 150, 50), (255, 255, 255))
+        self.menu_button = Button(self.WIDTH//2 + 20, self.HEIGHT//2 + 50, 180, 50, 
+                                 "Menu", self.font, (150, 50, 50), (255, 255, 255))
+        
+        # Game over screen tlačítka
+        self.restart_button = Button(self.WIDTH//2 - 200, self.HEIGHT//2 + 50, 180, 50, 
+                                    "Restart", self.font, (150, 50, 50), (255, 255, 255))
+        self.game_over_menu_button = Button(self.WIDTH//2 + 20, self.HEIGHT//2 + 50, 180, 50, 
+                                           "Menu", self.font, (100, 100, 100), (255, 255, 255))
         
         self.sprites = create_isometric_sprites(self.iso_utils)
         self.bg_surface = create_isometric_background(self.WIDTH, self.HEIGHT)
@@ -91,10 +104,26 @@ class BoomerManGame:
                     self.game_state = GameState.MENU_SCREEN
                 elif self.game_state == GameState.MENU_SCREEN:
                     if self.play_button.handle_event(event):
-                        self.game_state = GameState.PLAYING
+                        self.restart_game()
+                elif self.game_state == GameState.VICTORY:
+                    if self.play_again_button.handle_event(event):
+                        self.restart_game()
+                    elif self.menu_button.handle_event(event):
+                        self.game_state = GameState.MENU_SCREEN
+                elif self.game_state == GameState.GAME_OVER:
+                    if self.restart_button.handle_event(event):
+                        self.restart_game()
+                    elif self.game_over_menu_button.handle_event(event):
+                        self.game_state = GameState.MENU_SCREEN
             elif event.type == pygame.MOUSEMOTION:
                 if self.game_state == GameState.MENU_SCREEN:
                     self.play_button.handle_event(event)
+                elif self.game_state == GameState.VICTORY:
+                    self.play_again_button.handle_event(event)
+                    self.menu_button.handle_event(event)
+                elif self.game_state == GameState.GAME_OVER:
+                    self.restart_button.handle_event(event)
+                    self.game_over_menu_button.handle_event(event)
             elif event.type == pygame.KEYDOWN:
                 self.keys_pressed.add(event.key)
                 if self.game_state == GameState.MENU and event.key == pygame.K_SPACE:
@@ -193,6 +222,13 @@ class BoomerManGame:
         if enemies_hit:
             self.sound_effects['enemy_hit']['active'] = True
             self.sound_effects['enemy_hit']['timer'] = 20
+        
+        # Kontrola vítězství - žádné zničitelné bloky
+        if count_destructible_blocks(self.game_map) == 0:
+            if self.score > self.high_score:
+                self.high_score = self.score
+                self.save_high_score()
+            self.game_state = GameState.VICTORY
     
     def update_explosions(self):
         # Update částic
@@ -225,6 +261,8 @@ class BoomerManGame:
             self.draw_game()
         elif self.game_state == GameState.GAME_OVER:
             self.draw_game_over()
+        elif self.game_state == GameState.VICTORY:
+            self.draw_victory()
         
         pygame.display.flip()
     
@@ -399,11 +437,50 @@ class BoomerManGame:
         if self.screen_shake > 0:
             self.screen_shake -= 1
     
+    def load_high_score(self):
+        """Načte nejlepší skóre ze souboru"""
+        try:
+            with open('high_score.txt', 'r') as f:
+                return int(f.read().strip())
+        except:
+            return 0
+    
+    def save_high_score(self):
+        """Uloží nejlepší skóre do souboru"""
+        try:
+            with open('high_score.txt', 'w') as f:
+                f.write(str(self.high_score))
+        except:
+            pass
+    
+    def restart_game(self):
+        """Restartuje hru"""
+        self.score = 0
+        self.lives = 3
+        self.all_sprites.empty()
+        self.players.empty()
+        self.enemies.empty()
+        self.bombs.empty()
+        self.explosions.empty()
+        self.explosion_particles = []
+        self.screen_shake = 0
+        self.init_game_world()
+        self.game_state = GameState.PLAYING
+    
     def draw_game_over(self):
-        # Tmavé overlay
-        overlay = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 150))
-        self.screen.blit(overlay, (0, 0))
+        # Tmavé pozadí s červenými blesky
+        for y in range(self.HEIGHT):
+            color_val = int(20 + (math.sin(y * 0.03 + time.time() * 3) + 1) * 15)
+            color = (color_val + 30, color_val//3, color_val//3)
+            pygame.draw.line(self.screen, color, (0, y), (self.WIDTH, y))
+        
+        # Padající "slzy" efekt
+        for i in range(30):
+            x = (i * 97 + int(time.time() * 60)) % self.WIDTH
+            y = (i * 51 + int(time.time() * 120)) % self.HEIGHT
+            size = (i % 3) + 1
+            color = (100, 100, 150)
+            pygame.draw.circle(self.screen, color, (x, y), size)
         
         # Pulsující game over text
         pulse = math.sin(time.time() * 2) * 0.2 + 1
@@ -412,24 +489,99 @@ class BoomerManGame:
         
         # Stín
         shadow = pulse_font.render("GAME OVER", True, (100, 0, 0))
-        shadow_rect = shadow.get_rect(center=(self.WIDTH//2 + 3, self.HEIGHT//2 - 47))
+        shadow_rect = shadow.get_rect(center=(self.WIDTH//2 + 3, self.HEIGHT//2 - 97))
         self.screen.blit(shadow, shadow_rect)
         
         # Hlavní text
         game_over_text = pulse_font.render("GAME OVER", True, (255, 50, 50))
-        game_over_rect = game_over_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 50))
+        game_over_rect = game_over_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 100))
         self.screen.blit(game_over_text, game_over_rect)
         
-        # Finální skóre s rámečkem
-        score_bg = pygame.Surface((300, 50), pygame.SRCALPHA)
+        # Skóre s rámečkem
+        score_bg = pygame.Surface((350, 80), pygame.SRCALPHA)
         score_bg.fill((50, 50, 50, 200))
-        pygame.draw.rect(score_bg, (150, 150, 150), (0, 0, 300, 50), 2)
-        score_bg_rect = score_bg.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 + 20))
+        pygame.draw.rect(score_bg, (255, 50, 50), (0, 0, 350, 80), 3)
+        score_bg_rect = score_bg.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 20))
         self.screen.blit(score_bg, score_bg_rect)
         
-        score_text = self.font.render(f"Finální skóre: {self.score}", True, (255, 255, 0))
-        score_rect = score_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 + 20))
-        self.screen.blit(score_text, score_rect)
+        # Aktuální skóre
+        current_score_text = self.font.render(f"Vaše skóre: {self.score}", True, (255, 255, 255))
+        current_score_rect = current_score_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 35))
+        self.screen.blit(current_score_text, current_score_rect)
+        
+        # Nejlepší skóre
+        high_score_text = self.font.render(f"Nejlepší: {self.high_score}", True, (200, 200, 200))
+        high_score_rect = high_score_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 5))
+        self.screen.blit(high_score_text, high_score_rect)
+        
+        # Kreslení tlačítek
+        self.restart_button.draw(self.screen)
+        self.game_over_menu_button.draw(self.screen)
+        
+        # Motivační text
+        failure_text = self.font.render("Zkuste to znovu!", True, (255, 255, 255))
+        failure_rect = failure_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 + 120))
+        self.screen.blit(failure_text, failure_rect)
+    
+    def draw_victory(self):
+        # Zlaté pozadí s konfety efektem
+        for y in range(self.HEIGHT):
+            color_val = int(80 + (math.sin(y * 0.02 + time.time() * 2) + 1) * 30)
+            color = (color_val, color_val//2, 0)
+            pygame.draw.line(self.screen, color, (0, y), (self.WIDTH, y))
+        
+        # Konfety částice
+        for i in range(50):
+            x = (i * 73 + int(time.time() * 100)) % self.WIDTH
+            y = (i * 47 + int(time.time() * 80)) % self.HEIGHT
+            size = (i % 5) + 2
+            colors = [(255, 255, 0), (255, 100, 100), (100, 255, 100), (100, 100, 255), (255, 255, 255)]
+            color = colors[i % len(colors)]
+            pygame.draw.circle(self.screen, color, (x, y), size)
+        
+        # Pulsující victory text
+        pulse = math.sin(time.time() * 2) * 0.3 + 1
+        font_size = int(72 * pulse)
+        pulse_font = pygame.font.Font(None, font_size)
+        
+        # Stín
+        shadow = pulse_font.render("VÍTĚZSTVÍ!", True, (100, 50, 0))
+        shadow_rect = shadow.get_rect(center=(self.WIDTH//2 + 3, self.HEIGHT//2 - 97))
+        self.screen.blit(shadow, shadow_rect)
+        
+        # Hlavní text
+        victory_text = pulse_font.render("VÍTĚZSTVÍ!", True, (255, 215, 0))
+        victory_rect = victory_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 100))
+        self.screen.blit(victory_text, victory_rect)
+        
+        # Skóre s rámečkem
+        score_bg = pygame.Surface((350, 80), pygame.SRCALPHA)
+        score_bg.fill((50, 50, 50, 200))
+        pygame.draw.rect(score_bg, (255, 215, 0), (0, 0, 350, 80), 3)
+        score_bg_rect = score_bg.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 20))
+        self.screen.blit(score_bg, score_bg_rect)
+        
+        # Aktuální skóre
+        current_score_text = self.font.render(f"Vaše skóre: {self.score}", True, (255, 255, 255))
+        current_score_rect = current_score_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 35))
+        self.screen.blit(current_score_text, current_score_rect)
+        
+        # Nejlepší skóre
+        if self.score == self.high_score and self.score > 0:
+            high_score_text = self.font.render("🏆 NOVÝ REKORD! 🏆", True, (255, 215, 0))
+        else:
+            high_score_text = self.font.render(f"Nejlepší: {self.high_score}", True, (200, 200, 200))
+        high_score_rect = high_score_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 5))
+        self.screen.blit(high_score_text, high_score_rect)
+        
+        # Kreslení tlačítek
+        self.play_again_button.draw(self.screen)
+        self.menu_button.draw(self.screen)
+        
+        # Gratuláční text
+        congrats_text = self.font.render("Zničili jste všechny překážky!", True, (255, 255, 255))
+        congrats_rect = congrats_text.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 + 120))
+        self.screen.blit(congrats_text, congrats_rect)
     
     def run(self):
         while self.running:

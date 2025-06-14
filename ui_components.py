@@ -8,6 +8,7 @@ class GameState(Enum):
     MENU = 3
     PLAYING = 4
     GAME_OVER = 5
+    VICTORY = 6
 
 
 class Button:
