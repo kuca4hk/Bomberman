@@ -428,19 +428,19 @@ class BoomerManGame:
                 if self.game_map[y, x] == 0:
                     floor_rect = self.sprites['floor'].get_rect()
                     floor_rect.centerx = screen_x + self.iso_utils.half_tile_width
-                    floor_rect.bottom = screen_y + self.iso_utils.tile_height
+                    floor_rect.bottom = screen_y + self.iso_utils.tile_height + 40
                     render_list.append((y + x, 'floor', floor_rect))
                 
                 # Walls and destructible blocks
                 if self.game_map[y, x] == 1:  # Stěna
                     wall_rect = self.sprites['wall'].get_rect()
                     wall_rect.centerx = screen_x + self.iso_utils.half_tile_width
-                    wall_rect.bottom = screen_y + self.iso_utils.tile_height
+                    wall_rect.bottom = screen_y + self.iso_utils.tile_height + 24
                     render_list.append((y + x, 'wall', wall_rect))
                 elif self.game_map[y, x] == 2:  # Zničitelná stěna
                     brick_rect = self.sprites['brick'].get_rect()
                     brick_rect.centerx = screen_x + self.iso_utils.half_tile_width
-                    brick_rect.bottom = screen_y + self.iso_utils.tile_height
+                    brick_rect.bottom = screen_y + self.iso_utils.tile_height + 32
                     render_list.append((y + x, 'brick', brick_rect))
         
         # Add sprites to render list with proper sorting
