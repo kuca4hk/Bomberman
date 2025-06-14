@@ -3,6 +3,7 @@ import pygame
 import random
 from domain.entity.explosion import Explosion
 from utils.isometric_utils import IsometricUtils
+from domain.entity.biome import Biome
 
 
 def create_game_map(grid_width, grid_height):
@@ -34,41 +35,93 @@ def create_game_map(grid_width, grid_height):
 
 def create_isometric_sprites(iso_utils):
     """Vytvoří isometrické sprite objekty pro různé herní prvky"""
-    
-    spritesheet_path = "/Users/admin/cursor/Bomberman/assets/spritesheets/tinyBlocks_NOiL_1.1update.png"
-    spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
-    
-    sprite_width = spritesheet.get_width() // 6
-    sprite_height = spritesheet.get_height() // 6
-    
-    sprites = {}
-    for row in range(6):
-        for col in range(6):
-            sprite = pygame.transform.scale(spritesheet.subsurface((col * sprite_width, row * sprite_height, sprite_width, sprite_height)), (sprite_width * 4, sprite_height * 4))
-            sprites[(row, col)] = sprite
-            
-    used_sprites = {
-        'wall': sprites[(5, 1)],
-        'brick': sprites[(1, 1)],
-        'bomb': iso_utils.create_bomb_sprite(),
-        'floor': iso_utils.create_isometric_tile((60, 80, 40), 1, False)
-    }
 
-    return used_sprites
+    spritesheet_path = "assets/spritesheets/tinyBlocks_NOiL.png"
+    spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
+
+    sprite_width = spritesheet.get_width() // 10
+    sprite_height = spritesheet.get_height() // 10
+
+    sprites = {}
+    for row in range(10):
+        for col in range(10):
+            sprite = pygame.transform.scale(
+                spritesheet.subsurface(
+                    (
+                        col * sprite_width,
+                        row * sprite_height,
+                        sprite_width,
+                        sprite_height,
+                    )
+                ),
+                (sprite_width * 4, sprite_height * 4),
+            )
+            sprites[(row, col)] = sprite
+
+    return [
+        {
+            "wall": sprites[(3, 0)],
+            "brick": sprites[(1, 8)],
+            "bomb": iso_utils.create_bomb_sprite(),
+            "floor": sprites[(1, 2)],
+        },
+        {
+            "wall": sprites[(6, 0)],
+            "brick": sprites[(9, 3)],
+            "bomb": iso_utils.create_bomb_sprite(),
+            "floor": sprites[(6, 3)],
+        },
+        {
+            "wall": sprites[(3, 4)],
+            "brick": sprites[(4, 1)],
+            "bomb": iso_utils.create_bomb_sprite(),
+            "floor": sprites[(1, 2)],
+        },
+        {
+            "wall": sprites[(0, 6)],
+            "brick": sprites[(4, 8)],
+            "bomb": iso_utils.create_bomb_sprite(),
+            "floor": sprites[(2, 2)],
+        },
+        {
+            "wall": sprites[(1, 3)],
+            "brick": sprites[(9, 8)],
+            "bomb": iso_utils.create_bomb_sprite(),
+            "floor": sprites[(6, 5)],
+        },
+    ]
 
 
 def create_isometric_background(screen_width, screen_height):
     """Vytvoří isometrické pozadí"""
+    
     bg_surface = pygame.Surface((screen_width, screen_height))
     # Gradient background
     for y in range(screen_height):
         color_val = int(30 + (y / screen_height) * 40)
         color = (color_val // 2, color_val, color_val // 3)
         pygame.draw.line(bg_surface, color, (0, y), (screen_width, y))
-    return bg_surface
+        
+    
+    return [
+        pygame.image.load("assets/backgrounds/menu.png"),
+        pygame.image.load("assets/backgrounds/biome_grass.png"),
+        pygame.image.load("assets/backgrounds/biome_rock.png"),
+        pygame.image.load("assets/backgrounds/biome_wood.png"),
+        pygame.image.load("assets/backgrounds/biome_sand.png"),
+        pygame.image.load("assets/backgrounds/biome_snow.png"),
+    ]
 
 
-def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_group, all_sprites_group):
+def explode_bomb(
+    bomb,
+    game_map,
+    grid_width,
+    grid_height,
+    iso_utils,
+    explosions_group,
+    all_sprites_group,
+):
     """Zpracuje explozi bomby a vytvoří exploze ve všech směrech"""
     x, y = bomb.grid_x, bomb.grid_y
     power = bomb.power
@@ -94,14 +147,16 @@ def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_
                     # Isometrické částice při destrukci
                     screen_x, screen_y = iso_utils.grid_to_screen(nx, ny)
                     for _ in range(8):
-                        explosion_particles.append({
-                            'x': screen_x + random.randint(-20, 20),
-                            'y': screen_y + random.randint(-20, 20),
-                            'vx': random.uniform(-4, 4),
-                            'vy': random.uniform(-6, 2),
-                            'life': 40,
-                            'color': (139, 69, 19)
-                        })
+                        explosion_particles.append(
+                            {
+                                "x": screen_x + random.randint(-20, 20),
+                                "y": screen_y + random.randint(-20, 20),
+                                "vx": random.uniform(-4, 4),
+                                "vy": random.uniform(-6, 2),
+                                "life": 40,
+                                "color": (139, 69, 19),
+                            }
+                        )
                     break
                 explosion = Explosion(nx, ny, iso_utils)
                 explosions_group.add(explosion)
@@ -119,7 +174,9 @@ def check_collisions(player, enemies, explosions, lives, score):
         return lives, collision_occurred
 
     # Kolize s nepřáteli pomocí pygame.sprite.spritecollide
-    collided_enemies = pygame.sprite.spritecollide(player, enemies, False, pygame.sprite.collide_rect)
+    collided_enemies = pygame.sprite.spritecollide(
+        player, enemies, False, pygame.sprite.collide_rect
+    )
     if collided_enemies:
         lives -= 1
         collision_occurred = True
@@ -127,7 +184,9 @@ def check_collisions(player, enemies, explosions, lives, score):
 
     # Kolize s explozemi pomocí pygame.sprite.spritecollide
     if not collision_occurred:
-        collided_explosions = pygame.sprite.spritecollide(player, explosions, False, pygame.sprite.collide_rect)
+        collided_explosions = pygame.sprite.spritecollide(
+            player, explosions, False, pygame.sprite.collide_rect
+        )
         if collided_explosions:
             lives -= 1
             collision_occurred = True
@@ -147,7 +206,9 @@ def check_enemy_explosions(enemies, explosions, score):
 
     for enemy in enemies.copy():
         # Použijeme pygame.sprite.spritecollide pro přesnější kolize
-        collided_explosions = pygame.sprite.spritecollide(enemy, explosions, False, pygame.sprite.collide_rect)
+        collided_explosions = pygame.sprite.spritecollide(
+            enemy, explosions, False, pygame.sprite.collide_rect
+        )
         if collided_explosions:
             enemy.kill()
             enemies_hit.append(enemy)

@@ -10,7 +10,7 @@ from ui_components import GameState, Button
 from utils.isometric_utils import IsometricUtils
 from game_logic import (create_game_map, create_isometric_sprites, create_isometric_background, 
                        explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks)
-
+from domain.entity.biome import Biome
 
 class BoomerManGame:
     def __init__(self):
@@ -64,14 +64,15 @@ class BoomerManGame:
         self.game_over_menu_button = Button(self.WIDTH//2 + 20, self.HEIGHT//2 + 50, 180, 50, 
                                            "Menu", self.font, (100, 100, 100), (255, 255, 255))
         
-        self.sprites = create_isometric_sprites(self.iso_utils)
-        self.bg_surface = create_isometric_background(self.WIDTH, self.HEIGHT)
+        self.biome = None
+        self.sprites_collection = create_isometric_sprites(self.iso_utils)
+        self.bg_surface_collection = create_isometric_background(self.WIDTH, self.HEIGHT)
         self.init_game_world()
     
     def init_game_world(self):
         self.grid_width = 15
         self.grid_height = 11
-        
+                
         # Vytvoření herního pole
         self.game_map = create_game_map(self.grid_width, self.grid_height)
         
@@ -307,8 +308,22 @@ class BoomerManGame:
         # Blikání textu
         if int(time.time() * 2) % 2:
             self.screen.blit(click_text, click_rect)
+            
+    def change_used_sprites(self, is_menu = False):
+        if is_menu:
+            self.biome = None
+            self.sprites = self.sprites_collection[0]
+            self.bg_surface = self.bg_surface_collection[0]
+            return
+        
+        if self.biome is None:
+            self.biome = random.choice(list(Biome))
+            self.sprites = self.sprites_collection[self.biome.value]
+            self.bg_surface = self.bg_surface_collection[self.biome.value + 1]
     
     def draw_menu_screen(self):
+        self.change_used_sprites(is_menu=True)
+        
         # Isometrické pozadí
         self.screen.blit(self.bg_surface, (0, 0))
         
@@ -347,6 +362,8 @@ class BoomerManGame:
         shake_x = random.randint(-self.screen_shake, self.screen_shake) if self.screen_shake > 0 else 0
         shake_y = random.randint(-self.screen_shake, self.screen_shake) if self.screen_shake > 0 else 0
         
+        self.change_used_sprites()
+        
         # Isometrické pozadí
         self.screen.blit(self.bg_surface, (shake_x, shake_y))
         
@@ -364,19 +381,19 @@ class BoomerManGame:
                 if self.game_map[y, x] == 0:
                     floor_rect = self.sprites['floor'].get_rect()
                     floor_rect.centerx = screen_x + self.iso_utils.half_tile_width
-                    floor_rect.bottom = screen_y + self.iso_utils.tile_height
+                    floor_rect.bottom = screen_y + self.iso_utils.tile_height + 40
                     render_list.append((y + x, 'floor', floor_rect))
                 
                 # Walls and destructible blocks
                 if self.game_map[y, x] == 1:  # Stěna
                     wall_rect = self.sprites['wall'].get_rect()
                     wall_rect.centerx = screen_x + self.iso_utils.half_tile_width
-                    wall_rect.bottom = screen_y + self.iso_utils.tile_height
+                    wall_rect.bottom = screen_y + self.iso_utils.tile_height + 24
                     render_list.append((y + x, 'wall', wall_rect))
                 elif self.game_map[y, x] == 2:  # Zničitelná stěna
                     brick_rect = self.sprites['brick'].get_rect()
                     brick_rect.centerx = screen_x + self.iso_utils.half_tile_width
-                    brick_rect.bottom = screen_y + self.iso_utils.tile_height
+                    brick_rect.bottom = screen_y + self.iso_utils.tile_height + 32
                     render_list.append((y + x, 'brick', brick_rect))
         
         # Add sprites to render list with proper sorting
@@ -481,6 +498,7 @@ class BoomerManGame:
         self.explosions.empty()
         self.explosion_particles = []
         self.screen_shake = 0
+        self.biome = None
         self.init_game_world()
         self.game_state = GameState.PLAYING
     
