@@ -10,7 +10,6 @@ from ui_components import GameState, Button
 from utils.isometric_utils import IsometricUtils
 from game_logic import (create_game_map, create_isometric_sprites, create_isometric_background, 
                        explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks)
-from utils.isometric_utils import IsometricUtils
 
 
 class BoomerManGame:
