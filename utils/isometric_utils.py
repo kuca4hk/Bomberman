@@ -24,10 +24,10 @@ class IsometricUtils:
         assets_dir = os.path.join(project_root, "assets")
         
         try:
-            self.player_sheet = SpriteSheet(os.path.join(assets_dir, "player_sheet.png"))
+            self.player_sheet = SpriteSheet(os.path.join(assets_dir, "player_sheet2.png"))
             self.bomb_sheet = SpriteSheet(os.path.join(assets_dir, "bomb_sheet.png"))
             self.explosion_sheet = SpriteSheet(os.path.join(assets_dir, "explosion_sheet.png"))
-            self.enemy_sheet = SpriteSheet(os.path.join(assets_dir, "enemy_sheet.png"))
+            self.enemy_sheet = SpriteSheet(os.path.join(assets_dir, "player_sheet2_red.png"))
             self.sprites_loaded = True
             print(f"Sprite sheety načteny úspěšně z: {assets_dir}")
         except Exception as e:
@@ -134,7 +134,7 @@ class IsometricUtils:
         """Create character sprite from sprite sheet or fallback to procedural"""
         if self.sprites_loaded:
             # Použij sprite sheet - správné pořadí: col (frame), row (direction)
-            sprite = self.player_sheet.get_sprite(frame * 32, direction * 32, 32, 32, scale=1.5)
+            sprite = self.player_sheet.get_sprite(frame * 256, direction * 256, 256, 256, scale=0.25)
             
             # Aplikuj barevný filtr pro imunitu/damage
             if base_color != (0, 150, 255):  # Pokud není základní modrá
@@ -252,7 +252,7 @@ class IsometricUtils:
         """Create enemy sprite from sprite sheet or fallback to procedural"""
         if self.sprites_loaded:
             # Použij sprite sheet - enemy_type určuje řádek (0 nebo 1), frame určuje sloupec (0-3)
-            sprite = self.enemy_sheet.get_sprite(frame * 32, enemy_type * 32, 32, 32, scale=1.5)
+            sprite = self.enemy_sheet.get_sprite(frame * 256, enemy_type * 256, 256, 256, scale=0.25)
             return sprite
         else:
             # Fallback na procedurální generování

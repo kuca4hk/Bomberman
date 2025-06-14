@@ -8,7 +8,7 @@ from domain.entity.enemy import Enemy
 from domain.entity.player import Player
 from ui_components import GameState, Button
 from utils.isometric_utils import IsometricUtils
-from game_logic import (create_game_map, create_isometric_sprites, create_isometric_background, 
+from game_logic import (create_game_map, create_isometric_sprites, create_sounds, create_isometric_background, 
                        explode_bomb, check_collisions, check_enemy_explosions, count_destructible_blocks,
                        create_story_map, STORY_TOTAL_LEVELS)
 from domain.entity.biome import Biome
@@ -75,7 +75,10 @@ class BoomerManGame:
         
         self.sprites_collection = create_isometric_sprites(self.iso_utils)
         self.bg_surface_collection = create_isometric_background(self.WIDTH, self.HEIGHT)
+        self.sounds = create_sounds()
         self.init_game_world()
+        
+        self.sounds['background'].play(loops=-1).set_volume(0.1)
     
     def init_game_world(self):
         self.grid_width = 15
@@ -217,6 +220,7 @@ class BoomerManGame:
             # Mock zvukový efekt
             self.sound_effects['bomb_place']['active'] = True
             self.sound_effects['bomb_place']['timer'] = 20
+            self.sounds['bomb_place'].play()
     
     def update_sprites(self):
         # Update bomb sprites
@@ -230,6 +234,7 @@ class BoomerManGame:
                 self.screen_shake = 8
                 self.sound_effects['explosion']['active'] = True
                 self.sound_effects['explosion']['timer'] = 30
+                self.sounds['explosion'].play()
                 # Sníž počítadlo bomb u hráče po explozi
                 self.player.remove_bomb()
                 bomb.kill()
@@ -250,6 +255,7 @@ class BoomerManGame:
         if player_hit:
             self.sound_effects['player_hit']['active'] = True
             self.sound_effects['player_hit']['timer'] = 20
+            self.sounds['player_hit'].play()
             if self.lives <= 0:
                 self.game_state = GameState.GAME_OVER
         
@@ -258,6 +264,7 @@ class BoomerManGame:
         if enemies_hit:
             self.sound_effects['enemy_hit']['active'] = True
             self.sound_effects['enemy_hit']['timer'] = 20
+            self.sounds['enemy_hit'].play()
         
         # Kontrola vítězství - žádné zničitelné bloky
         if count_destructible_blocks(self.game_map) == 0:

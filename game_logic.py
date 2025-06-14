@@ -125,6 +125,15 @@ def create_isometric_background(screen_width, screen_height):
         pygame.image.load("assets/backgrounds/biome_snow.png"),
     ]
 
+def create_sounds():
+    """Vytvoří zvuky pro hru"""
+    return {
+        "background": pygame.mixer.Sound("assets/sounds/background_melody.wav"),
+        "bomb_place": pygame.mixer.Sound("assets/sounds/bomb_place.wav"),
+        "explosion": pygame.mixer.Sound("assets/sounds/explosion.wav"),
+        "enemy_hit": pygame.mixer.Sound("assets/sounds/enemy_hit.wav"),
+        "player_hit": pygame.mixer.Sound("assets/sounds/player_hit.wav"),
+    }
 
 def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_group, all_sprites_group):
     """Zpracuje explozi bomby a vytvoří exploze ve všech směrech"""
