@@ -34,21 +34,27 @@ def create_game_map(grid_width, grid_height):
 
 def create_isometric_sprites(iso_utils):
     """Vytvoří isometrické sprite objekty pro různé herní prvky"""
+    
+    spritesheet_path = "/Users/admin/cursor/Bomberman/assets/spritesheets/tinyBlocks_NOiL_1.1update.png"
+    spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
+    
+    sprite_width = spritesheet.get_width() // 6
+    sprite_height = spritesheet.get_height() // 6
+    
     sprites = {}
+    for row in range(6):
+        for col in range(6):
+            sprite = pygame.transform.scale(spritesheet.subsurface((col * sprite_width, row * sprite_height, sprite_width, sprite_height)), (sprite_width * 4, sprite_height * 4))
+            sprites[(row, col)] = sprite
+            
+    used_sprites = {
+        'wall': sprites[(5, 1)],
+        'brick': sprites[(1, 1)],
+        'bomb': iso_utils.create_bomb_sprite(),
+        'floor': iso_utils.create_isometric_tile((60, 80, 40), 1, False)
+    }
 
-    # Stěna - kamenný blok
-    sprites['wall'] = iso_utils.create_isometric_cube((120, 120, 120), 1)
-
-    # Zničitelná stěna - cihlový blok
-    sprites['brick'] = iso_utils.create_isometric_cube((139, 69, 19), 1)
-
-    # Bomba pro dekorace
-    sprites['bomb'] = iso_utils.create_bomb_sprite()
-
-    # Podlaha
-    sprites['floor'] = iso_utils.create_isometric_tile((60, 80, 40), 1, False)
-
-    return sprites
+    return used_sprites
 
 
 def create_isometric_background(screen_width, screen_height):
