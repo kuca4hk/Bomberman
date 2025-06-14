@@ -118,7 +118,6 @@ def check_collisions(player, enemies, explosions, lives, score):
         lives -= 1
         collision_occurred = True
         player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
-        print(f"Hráč zasažen nepřítelem! Imunita aktivována na {player.immunity_timer} framů")
 
     # Kolize s explozemi pomocí pygame.sprite.spritecollide
     if not collision_occurred:
@@ -127,7 +126,6 @@ def check_collisions(player, enemies, explosions, lives, score):
             lives -= 1
             collision_occurred = True
             player.immunity_timer = 120  # 8 sekund imunity při 15 FPS
-            print(f"Hráč zasažen explozí! Imunita aktivována na {player.immunity_timer} framů")
 
     # Reset pozice hráče při kolizi
     if collision_occurred and lives > 0:

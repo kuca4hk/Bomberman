@@ -60,9 +60,6 @@ class Player(pygame.sprite.Sprite):
             self.immunity_timer -= 1
             # Aktualizuj sprite pro blikání
             self.create_sprite()
-            # Debug výpis každých 30 framů
-            if self.immunity_timer % 30 == 0:
-                print(f"Imunita zbývá: {self.immunity_timer} framů")
 
     def set_facing_direction(self, direction):
         if self.facing_direction != direction:
