@@ -63,23 +63,23 @@ class BoomerManGame:
         self.explosions = pygame.sprite.Group()
         self.powerups = pygame.sprite.Group()
         
-        # UI tlačítka pro menu
+        # UI tlačítka pro menu - barevné gradientové tlačítka
         self.play_button = Button(self.WIDTH//2 - 100, self.HEIGHT//2 - 30, 200, 50,
-                                 "HRÁT", self.font, (50, 100, 50), (255, 255, 255))
+                                 "HRÁT", self.font, (34, 139, 34), (255, 255, 255))  # Zelená
         self.story_button = Button(self.WIDTH//2 - 100, self.HEIGHT//2 + 30, 200, 50,
-                                  "STORY", self.font, (100, 50, 150), (255, 255, 255))
+                                  "STORY", self.font, (138, 43, 226), (255, 255, 255))  # Fialová
         
-        # Victory screen tlačítka
+        # Victory screen tlačítka - barevné
         self.play_again_button = Button(self.WIDTH//2 - 200, self.HEIGHT//2 + 50, 180, 50, 
-                                       "Hrát znova", self.font, (50, 150, 50), (255, 255, 255))
+                                       "Hrát znova", self.font, (34, 139, 34), (255, 255, 255))  # Zelená
         self.menu_button = Button(self.WIDTH//2 + 20, self.HEIGHT//2 + 50, 180, 50, 
-                                 "Menu", self.font, (150, 50, 50), (255, 255, 255))
+                                 "Menu", self.font, (30, 144, 255), (255, 255, 255))  # Modrá
         
-        # Game over screen tlačítka
+        # Game over screen tlačítka - barevné
         self.restart_button = Button(self.WIDTH//2 - 200, self.HEIGHT//2 + 50, 180, 50, 
-                                    "Restart", self.font, (150, 50, 50), (255, 255, 255))
+                                    "Restart", self.font, (220, 20, 60), (255, 255, 255))  # Červená
         self.game_over_menu_button = Button(self.WIDTH//2 + 20, self.HEIGHT//2 + 50, 180, 50, 
-                                           "Menu", self.font, (100, 100, 100), (255, 255, 255))
+                                           "Menu", self.font, (70, 130, 180), (255, 255, 255))  # Ocelová modrá
         
         self.sprites_collection = create_isometric_sprites(self.iso_utils)
         self.bg_surface_collection = create_isometric_background(self.WIDTH, self.HEIGHT)
@@ -437,18 +437,72 @@ class BoomerManGame:
         """
         self.change_used_sprites(is_menu=True)
 
-        # Isometrické pozadí
-        self.screen.blit(self.bg_surface, (0, 0))
+        # Dynamické pozadí s gradientem a efekty
+        for y in range(self.HEIGHT):
+            # Více vrstev gradientu pro bohatší vzhled
+            wave1 = math.sin(y * 0.008 + time.time() * 0.5) * 20 + 20
+            wave2 = math.cos(y * 0.012 + time.time() * 0.3) * 15 + 15
+            wave3 = math.sin(y * 0.005 + time.time() * 0.8) * 10 + 10
+            
+            # Tmavší základní barva s jemnými vlnami
+            color_r = int(10 + wave1 * 0.4)
+            color_g = int(15 + wave2 * 0.3) 
+            color_b = int(25 + wave3 * 0.6)
+            
+            pygame.draw.line(self.screen, (color_r, color_g, color_b), (0, y), (self.WIDTH, y))
         
-        # Stín pro title
-        shadow = self.big_font.render("BOOMER MAN", True, (100, 0, 0))
-        shadow_rect = shadow.get_rect(center=(self.WIDTH//2 + 3, self.HEIGHT//2 - 147))
-        self.screen.blit(shadow, shadow_rect)
+        # Překrytí isometrického pozadí s průhledností
+        bg_overlay = self.bg_surface.copy()
+        bg_overlay.set_alpha(120)
+        self.screen.blit(bg_overlay, (0, 0))
         
-        # Gradient title
-        title = self.big_font.render("BOOMER MAN", True, (255, 200, 0))
-        title_rect = title.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 150))
-        self.screen.blit(title, title_rect)
+        # Jemné světelné efekty v pozadí
+        for i in range(15):
+            angle = time.time() * 0.3 + i * math.pi / 7.5
+            x = self.WIDTH//2 + math.cos(angle) * (200 + i * 10)
+            y = self.HEIGHT//2 + math.sin(angle) * (100 + i * 5)
+            alpha = int((math.sin(time.time() * 2 + i) + 1) * 15)
+            if alpha > 0:
+                glow_surf = pygame.Surface((20, 20), pygame.SRCALPHA)
+                pygame.draw.circle(glow_surf, (255, 255, 200, alpha), (10, 10), 10)
+                self.screen.blit(glow_surf, (int(x) - 10, int(y) - 10))
+        
+        # Vylepšený title s více efekty
+        pulse = math.sin(time.time() * 1.5) * 0.1 + 1
+        
+        # Více vrstev stínu pro hloubku
+        for i in range(5, 0, -1):
+            shadow_alpha = 150 - i * 25
+            shadow_color = (50 - i * 8, 0, 0)
+            shadow = self.big_font.render("BOOMER MAN", True, shadow_color)
+            shadow_rect = shadow.get_rect(center=(self.WIDTH//2 + i * 2, self.HEIGHT//2 - 150 + i * 2))
+            shadow_surface = pygame.Surface(shadow.get_size(), pygame.SRCALPHA)
+            shadow_surface.blit(shadow, (0, 0))
+            shadow_surface.set_alpha(shadow_alpha)
+            self.screen.blit(shadow_surface, shadow_rect)
+        
+        # Hlavní titul s gradientovým efektem
+        title_surface = pygame.Surface((600, 100), pygame.SRCALPHA)
+        title_text = self.big_font.render("BOOMER MAN", True, (255, 220, 50))
+        title_rect = title_text.get_rect(center=(300, 50))
+        
+        # Přidat záři kolem textu
+        glow_surface = pygame.Surface((600, 100), pygame.SRCALPHA)
+        for offset in range(1, 4):
+            glow_text = self.big_font.render("BOOMER MAN", True, (255, 200, 0, 80 - offset * 20))
+            for dx in [-offset, 0, offset]:
+                for dy in [-offset, 0, offset]:
+                    if dx != 0 or dy != 0:
+                        glow_surface.blit(glow_text, (title_rect.x + dx, title_rect.y + dy))
+        
+        title_surface.blit(glow_surface, (0, 0))
+        title_surface.blit(title_text, title_rect)
+        
+        # Aplikovat pulsování
+        scaled_size = (int(600 * pulse), int(100 * pulse))
+        scaled_title = pygame.transform.scale(title_surface, scaled_size)
+        final_rect = scaled_title.get_rect(center=(self.WIDTH//2, self.HEIGHT//2 - 150))
+        self.screen.blit(scaled_title, final_rect)
         
         # Kreslení tlačítek
         self.play_button.draw(self.screen)
@@ -549,73 +603,125 @@ class BoomerManGame:
         # Kreslení částic
         self.update_explosions()
         
-        # Fancy UI s pozadím - větší pro immunity bar
-        ui_height = 125 if self.player.immunity_timer > 0 else 90
-        ui_bg = pygame.Surface((200, ui_height), pygame.SRCALPHA)
-        ui_bg.fill((0, 0, 0, 150))
-        pygame.draw.rect(ui_bg, (100, 100, 100), (0, 0, 200, ui_height), 2)
-        self.screen.blit(ui_bg, (10, 10))
+        # Vylepšený UI panel s moderním designem
+        powerups_active = (self.player.speed_boost_timer > 0 or self.player.bigger_explosion_timer > 0)
+        story_mode = (self.game_state == GameState.STORY_PLAYING)
+        immunity_active = (self.player.immunity_timer > 0)
         
-        score_text = self.font.render(f"Skóre: {self.score}", True, (255, 255, 0))
-        self.screen.blit(score_text, (20, 20))
+        # Výpočet výšky panelu podle obsahu - reaktivní design
+        base_height = 130  # Základní výška pro skóre, životy, bomby
         
+        # Přidat místo pro bomb progress bar
+        if len(self.bombs) > 0:
+            base_height += 45  # Label + progress bar + spacing
+            
+        if story_mode:
+            base_height += 30
+            
+        if powerups_active:
+            base_height += 25 * (int(self.player.speed_boost_timer > 0) + int(self.player.bigger_explosion_timer > 0))
+            
+        if immunity_active:
+            base_height += 50  # Text + progress bar + spacing
+        
+        ui_width = 280
+        ui_height = base_height
+        
+        # Gradientní pozadí panelu
+        ui_bg = pygame.Surface((ui_width, ui_height), pygame.SRCALPHA)
+        
+        # Vytvoření gradientu (tmavší nahoře, světlejší dole)
+        for y in range(ui_height):
+            alpha = 180 - (y * 40 // ui_height)  # Gradient průhlednosti
+            color_intensity = 20 + (y * 15 // ui_height)  # Gradient barvy
+            pygame.draw.line(ui_bg, (color_intensity, color_intensity, color_intensity + 10, alpha), 
+                           (0, y), (ui_width, y))
+        
+        # Fancy okraje s více vrstvami pro 3D efekt
+        # Vnější světlý okraj
+        pygame.draw.rect(ui_bg, (200, 200, 220, 100), (0, 0, ui_width, ui_height), 3, border_radius=12)
+        # Střední okraj
+        pygame.draw.rect(ui_bg, (150, 150, 170, 150), (2, 2, ui_width-4, ui_height-4), 2, border_radius=10)
+        # Vnitřní tmavý okraj
+        pygame.draw.rect(ui_bg, (80, 80, 90, 200), (4, 4, ui_width-8, ui_height-8), 1, border_radius=8)
+        
+        # Přidat jemný glow efekt kolem panelu
+        glow_surface = pygame.Surface((ui_width + 20, ui_height + 20), pygame.SRCALPHA)
+        for i in range(10, 0, -1):
+            glow_alpha = 15 - i
+            pygame.draw.rect(glow_surface, (100, 150, 255, glow_alpha), 
+                           (10-i, 10-i, ui_width + i*2, ui_height + i*2), border_radius=12+i)
+        
+        self.screen.blit(glow_surface, (5, 5))
+        self.screen.blit(ui_bg, (15, 15))
+        
+        # Pozice pro obsah
+        x_margin = 25
+        y_pos = 25
+        
+        # Skóre s textem
+        score_text = self.font.render(f"Skóre: {self.score}", True, (255, 215, 0))  # Zlatá
+        self.screen.blit(score_text, (x_margin, y_pos))
+        y_pos += 30
+        
+        # Životy s textem  
         lives_text = self.font.render(f"Životy: {self.lives}", True, (255, 100, 100))
-        self.screen.blit(lives_text, (20, 50))
+        self.screen.blit(lives_text, (x_margin, y_pos))
+        y_pos += 30
         
-        # Zobraz počítadlo bomb pro všechny módy
+        # Bomby s lepším zobrazením
         if self.player.unlimited_bombs_timer > 0:
             bombs_text = self.font.render(f"Bomby: ∞ ({self.player.unlimited_bombs_timer // 15 + 1}s)", True, (255, 255, 0))
         else:
             bombs_text = self.font.render(f"Bomby: {self.player.current_bomb_count}/{self.player.max_bombs}", True, (255, 200, 100))
-        self.screen.blit(bombs_text, (220, 20))
+        self.screen.blit(bombs_text, (x_margin, y_pos))
+        y_pos += 30
         
-        # Zobraz aktivní powerupy pro všechny módy
-        powerup_y = 50
-        if self.game_state == GameState.STORY_PLAYING:
-            level_text = self.font.render(f"Level: {self.story_level}/{STORY_TOTAL_LEVELS}", True, (255, 255, 255))
-            self.screen.blit(level_text, (220, powerup_y))
-            powerup_y += 30
-        
-        if self.player.speed_boost_timer > 0:
-            speed_text = self.font.render(f"⚡ Rychlost ({self.player.speed_boost_timer // 15 + 1}s)", True, (100, 255, 100))
-            self.screen.blit(speed_text, (220, powerup_y))
-            powerup_y += 25
-        if self.player.bigger_explosion_timer > 0:
-            explosion_text = self.font.render(f"💥 Velká exploze ({self.player.bigger_explosion_timer // 15 + 1}s)", True, (255, 100, 255))
-            self.screen.blit(explosion_text, (220, powerup_y))
-
-        # Progress bar pro bomby
+        # Progress bar pro bomby (uvnitř panelu)
         if len(self.bombs) > 0:
+            bomb_label = self.font.render("Bomba:", True, (200, 200, 200))
+            self.screen.blit(bomb_label, (x_margin, y_pos))
+            y_pos += 20
+            
             bomb_timer = min(bomb.timer for bomb in self.bombs)
             progress = bomb_timer / 75.0
-            pygame.draw.rect(self.screen, (100, 0, 0), (20, 75, 160, 10))
-            pygame.draw.rect(self.screen, (255, 0, 0), (20, 75, int(160 * progress), 10))
+            # Pozadí progress baru
+            pygame.draw.rect(self.screen, (60, 20, 20), (x_margin, y_pos, 180, 12), border_radius=6)
+            # Aktivní část
+            pygame.draw.rect(self.screen, (255, 80, 80), (x_margin, y_pos, int(180 * progress), 12), border_radius=6)
+            # Okraj
+            pygame.draw.rect(self.screen, (200, 200, 200), (x_margin, y_pos, 180, 12), 2, border_radius=6)
+            y_pos += 25
         
-        # Progress bar pro imunitu hráče
-        if self.player.immunity_timer > 0:
-            immunity_progress = self.player.immunity_timer / 120.0
-            pygame.draw.rect(self.screen, (0, 0, 100), (20, 90, 160, 10))
-            pygame.draw.rect(self.screen, (0, 150, 255), (20, 90, int(160 * immunity_progress), 10))
+        # Level info pro story mode
+        if story_mode:
+            level_text = self.font.render(f"Level: {self.story_level}/{STORY_TOTAL_LEVELS}", True, (150, 255, 150))
+            self.screen.blit(level_text, (x_margin, y_pos))
+            y_pos += 30
+        
+        # Powerupy
+        if self.player.speed_boost_timer > 0:
+            speed_text = self.font.render(f"Rychlost: ({self.player.speed_boost_timer // 15 + 1}s)", True, (100, 255, 100))
+            self.screen.blit(speed_text, (x_margin, y_pos))
+            y_pos += 25
             
-            # Text pro imunitu
-            immunity_text = self.font.render("Imunita", True, (0, 150, 255))
-            self.screen.blit(immunity_text, (20, 105))
+        if self.player.bigger_explosion_timer > 0:
+            explosion_text = self.font.render(f"Velká exploze: ({self.player.bigger_explosion_timer // 15 + 1}s)", True, (255, 100, 255))
+            self.screen.blit(explosion_text, (x_margin, y_pos))
+            y_pos += 25
         
-        # Mock vizuální indikace zvukových efektů
-        effect_y = 130 if self.player.immunity_timer > 0 else 95
-        for effect_name, effect in self.sound_effects.items():
-            if effect['active']:
-                alpha = min(255, effect['timer'] * 12)
-                color_map = {
-                    'bomb_place': (0, 255, 0),
-                    'explosion': (255, 100, 0),
-                    'enemy_hit': (255, 255, 0),
-                    'player_hit': (255, 0, 0)
-                }
-                color = color_map.get(effect_name, (255, 255, 255))
-                text = self.font.render(f"♪ {effect_name}", True, (*color, alpha))
-                self.screen.blit(text, (220, effect_y))
-                effect_y += 25
+        # Imunita s progress barem
+        if immunity_active:
+            immunity_text = self.font.render("Imunita:", True, (100, 200, 255))
+            self.screen.blit(immunity_text, (x_margin, y_pos))
+            y_pos += 20
+            
+            # Progress bar pro imunitu
+            immunity_progress = self.player.immunity_timer / 120.0
+            pygame.draw.rect(self.screen, (20, 40, 80), (x_margin, y_pos, 180, 10), border_radius=5)
+            pygame.draw.rect(self.screen, (100, 200, 255), (x_margin, y_pos, int(180 * immunity_progress), 10), border_radius=5)
+            pygame.draw.rect(self.screen, (200, 200, 200), (x_margin, y_pos, 180, 10), 1, border_radius=5)
+        
         
         # Snížení screen shake
         if self.screen_shake > 0:
