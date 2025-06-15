@@ -3,6 +3,12 @@ import math
 
 
 class Bomb(pygame.sprite.Sprite):
+    """
+    Class for bomb sprite
+
+    bomb has x, y and timer that says how long from placing it takes the bomb to explode
+    it also has an animation
+    """
     def __init__(self, x, y, iso_utils, power=2):
         super().__init__()
         self.iso_utils = iso_utils

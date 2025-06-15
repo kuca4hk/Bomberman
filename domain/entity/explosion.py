@@ -1,6 +1,13 @@
 import pygame
 
 class Explosion(pygame.sprite.Sprite):
+    """
+    Class for the explosion sprite(s)
+
+    when bomb explodes the bomb sprite is deleted and several explosion sprites appear
+    explosion sprites delete destroyable barriers and are harmful to the player and to enemies
+    they have animation and timer, that determines, how long the explosion takes
+    """
     def __init__(self, x, y, iso_utils):
         super().__init__()
         self.iso_utils = iso_utils
