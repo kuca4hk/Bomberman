@@ -273,6 +273,12 @@ class BoomerManGame:
             enemy.update(self.game_map, self.grid_width, self.grid_height, self.player, pygame.sprite.Group(self.bombs, self.explosions))
     
     def check_game_collisions(self):
+        """
+        Processes collisions.
+        If the player is hit by explosion or by the enemy he loses a live.
+        If the player has 0 lives, the game and, player lost.
+        If there are no destroyable blocks, player won.
+        """
         # Kolize hráče
         self.lives, player_hit = check_collisions(self.player, self.enemies, 
                                                  self.explosions, self.lives, self.score)
@@ -314,6 +320,7 @@ class BoomerManGame:
                 self.game_state = GameState.VICTORY
     
     def update_explosions(self):
+        """Explosion animation"""
         # Update částic
         for particle in self.explosion_particles[:]:
             particle['x'] += particle['vx']
@@ -332,6 +339,7 @@ class BoomerManGame:
                 pygame.draw.circle(self.screen, color[:3], (int(particle['x']), int(particle['y'])), size)
     
     def draw(self):
+        """Function drawing screen content according to the state of the game (level, wellcome screen, gamover etc.)"""
         self.screen.fill((0, 0, 0))
         
         if self.game_state == GameState.INTRO:
@@ -352,6 +360,7 @@ class BoomerManGame:
         pygame.display.flip()
     
     def draw_intro(self):
+        """Draws wellcome screen of the game"""
         # Fancy gradient background
         for y in range(self.HEIGHT):
             color_val = int(50 + (math.sin(y * 0.01 + time.time()) + 1) * 25)
@@ -400,6 +409,11 @@ class BoomerManGame:
             self.bg_surface = self.bg_surface_collection[self.biome.value + 1]
 
     def draw_menu_screen(self):
+        """
+        Draws menu screen, where the user can choose game mode.
+        Score game mode is one level, player must destroy the most destroyable blocks.
+        Story mode is several levels the user must pass to win the game.
+        """
         self.change_used_sprites(is_menu=True)
 
         # Isometrické pozadí
@@ -433,10 +447,8 @@ class BoomerManGame:
             bomb_rect = scaled_bomb.get_rect(center=pos)
             self.screen.blit(scaled_bomb, bomb_rect)
     
-    def draw_menu(self):
-        pass  # Nepoužívá se
-    
     def draw_game(self):
+        """Draws current level with its items."""
         # Screen shake efekt
         shake_x = random.randint(-self.screen_shake, self.screen_shake) if self.screen_shake > 0 else 0
         shake_y = random.randint(-self.screen_shake, self.screen_shake) if self.screen_shake > 0 else 0
@@ -667,6 +679,7 @@ class BoomerManGame:
         }
     
     def draw_game_over(self):
+        """Draws game over screen. Used when player loses. User can go back to menu or restart the game."""
         # Tmavé pozadí s červenými blesky
         for y in range(self.HEIGHT):
             color_val = int(20 + (math.sin(y * 0.03 + time.time() * 3) + 1) * 15)
@@ -723,6 +736,7 @@ class BoomerManGame:
         self.screen.blit(failure_text, failure_rect)
     
     def draw_victory(self):
+        """Draws Win screen after scoremode. Used when player destroys all blocks in score mode."""
         # Zlaté pozadí s konfety efektem
         for y in range(self.HEIGHT):
             color_val = int(80 + (math.sin(y * 0.02 + time.time() * 2) + 1) * 30)
@@ -783,6 +797,7 @@ class BoomerManGame:
         self.screen.blit(congrats_text, congrats_rect)
 
     def draw_story_complete(self):
+        """Draws Win screen after story mode. Used when player sucessfully passes all levels."""
         # Úžasné pozadí s duhovými vlnami
         for y in range(self.HEIGHT):
             wave1 = math.sin(y * 0.01 + time.time() * 2) * 30 + 30
@@ -846,6 +861,14 @@ class BoomerManGame:
         self.screen.blit(congrats_text, congrats_rect)
 
     def run(self):
+        """
+        Main loop of the game.
+
+        1. events are handled.
+        2. all sprites are updated
+        3. screen is redrawn
+        4. fixed FPS
+        """
         while self.running:
             self.handle_events()
             self.update()
