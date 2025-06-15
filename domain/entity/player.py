@@ -2,6 +2,13 @@ import pygame
 
 
 class Player(pygame.sprite.Sprite):
+    """
+    Class for player sprite
+
+    player has x, y, can have imunity after hit, has max_boms meaning how many bombs he can place
+    also has animation
+    player is controlled by the user
+    """
     def __init__(self, x, y, iso_utils):
         super().__init__()
         self.iso_utils = iso_utils
@@ -38,6 +45,26 @@ class Player(pygame.sprite.Sprite):
         self.rect.bottom = screen_y + offset_y
 
     def move(self, dx, dy, game_map, grid_width, grid_height, bombs=None):
+        """
+        Function for moving the player.
+        It checks if the move is valid.
+        Player cannot walk out of the map, through the wall and through the bomb
+
+        Inputs:
+        -------
+        dx : int
+            x change from current position
+        dy : int
+            y change from current position
+        game_map : 2d array
+            map of the game, used for determining valid moves
+        grid_width : int
+            width of the map, used for determining valid moves
+        grid_height : int
+            height of the map, used for determining valid moves
+        bombs, default None
+            bombs placed on the map
+        """
         new_x = max(0, min(grid_width - 1, self.grid_x + dx))
         new_y = max(0, min(grid_height - 1, self.grid_y + dy))
 
@@ -80,6 +107,10 @@ class Player(pygame.sprite.Sprite):
             self.create_sprite()
 
     def set_facing_direction(self, direction):
+        """
+        Function for setting the direction the player is facing.
+        variable facing_direction is then used for animation
+        """
         if self.facing_direction != direction:
             self.facing_direction = direction
             self.create_sprite()
