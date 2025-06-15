@@ -40,7 +40,7 @@ def create_game_map(grid_width, grid_height):
                 is_important = any(abs(j - imp_x) <= 1 and abs(i - imp_y) <= 1
                                  for imp_x, imp_y in important_positions)
 
-                # Přidej zničitelnou stěnu jen pokud není v důležité oblasti
+                # Přidej zničitelnou stěnu jen pokud není v důle žité oblasti
                 if not is_important and np.random.random() < 0.25:
                     game_map[i, j] = 2
 
