@@ -100,13 +100,19 @@ class BoomerManGame:
         
         # Vytvoření hráče a nepřátel jako sprite objekty
         self.player = Player(1, 1, self.iso_utils)
+        # Nastaví 3 bomby pro normální high-score mód
+        self.player.max_bombs = 3
         self.all_sprites.add(self.player)
         self.players.add(self.player)
         
-        # Nepřátelé
-        enemy = Enemy(self.grid_width-2, self.grid_height-2, self.iso_utils)
-        self.all_sprites.add(enemy)
-        self.enemies.add(enemy)
+        # Nepřátelé - 3 v rozích pro normální mód
+        enemy_positions = [(self.grid_width-2, self.grid_height-2),
+                          (self.grid_width-2, 2), (2, self.grid_height-2)]
+        
+        for x, y in enemy_positions:
+            enemy = Enemy(x, y, self.iso_utils)
+            self.all_sprites.add(enemy)
+            self.enemies.add(enemy)
         
         # Animace a efekty
         self.bomb_pulse_timer = 0
