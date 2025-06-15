@@ -54,6 +54,7 @@ class BoomerManGame:
         self.enemies = pygame.sprite.Group()
         self.bombs = pygame.sprite.Group()
         self.explosions = pygame.sprite.Group()
+        self.powerups = pygame.sprite.Group()
         
         # UI tlačítka pro menu
         self.play_button = Button(self.WIDTH//2 - 100, self.HEIGHT//2 - 30, 200, 50,
@@ -210,7 +211,9 @@ class BoomerManGame:
                          for bomb in self.bombs)
         
         if not bomb_exists:
-            bomb = Bomb(bomb_pos[0], bomb_pos[1], self.iso_utils)
+            # Použij sílu bomb z hráče (může být zvýšená powerupem)
+            bomb_power = self.player.get_bomb_power()
+            bomb = Bomb(bomb_pos[0], bomb_pos[1], self.iso_utils, power=bomb_power)
             self.bombs.add(bomb)
             self.all_sprites.add(bomb)
             # Přidej bombu do počítadla hráče
@@ -226,9 +229,9 @@ class BoomerManGame:
         # Update bomb sprites
         for bomb in self.bombs.copy():
             if bomb.update():  # Vrací True pokud má explodovat
-                particles, score_gain = explode_bomb(bomb, self.game_map, self.grid_width, 
+                particles, score_gain, spawned_powerups = explode_bomb(bomb, self.game_map, self.grid_width, 
                                                    self.grid_height, self.iso_utils, 
-                                                   self.explosions, self.all_sprites)
+                                                   self.explosions, self.all_sprites, self.powerups)
                 self.explosion_particles.extend(particles)
                 self.score += score_gain
                 self.screen_shake = 8
@@ -244,6 +247,11 @@ class BoomerManGame:
             if explosion.update():  # Vrací True pokud má zmizet
                 explosion.kill()
         
+        # Update powerup sprites
+        for powerup in self.powerups.copy():
+            if powerup.update():  # Vrací True pokud má zmizet
+                powerup.kill()
+        
         # Update enemy sprites
         for enemy in self.enemies:
             enemy.update(self.game_map, self.grid_width, self.grid_height, self.player, pygame.sprite.Group(self.bombs, self.explosions))
@@ -258,6 +266,13 @@ class BoomerManGame:
             self.sounds['player_hit'].play()
             if self.lives <= 0:
                 self.game_state = GameState.GAME_OVER
+        
+        # Sbírání powerupů
+        collected_powerups = pygame.sprite.spritecollide(self.player, self.powerups, True)
+        for powerup in collected_powerups:
+            self.player.apply_powerup(powerup.powerup_type)
+            # Zvukový efekt pro powerup (můžeme použít bomb_place sound)
+            self.sounds['bomb_place'].play()
         
         # Kolize nepřátel s explozemi
         self.score, enemies_hit = check_enemy_explosions(self.enemies, self.explosions, self.score)
@@ -489,13 +504,27 @@ class BoomerManGame:
         lives_text = self.font.render(f"Životy: {self.lives}", True, (255, 100, 100))
         self.screen.blit(lives_text, (20, 50))
         
-        # Story mode UI - zobraz level informace
+        # Zobraz počítadlo bomb pro všechny módy
+        if self.player.unlimited_bombs_timer > 0:
+            bombs_text = self.font.render(f"Bomby: ∞ ({self.player.unlimited_bombs_timer // 15 + 1}s)", True, (255, 255, 0))
+        else:
+            bombs_text = self.font.render(f"Bomby: {self.player.current_bomb_count}/{self.player.max_bombs}", True, (255, 200, 100))
+        self.screen.blit(bombs_text, (220, 20))
+        
+        # Zobraz aktivní powerupy pro všechny módy
+        powerup_y = 50
         if self.game_state == GameState.STORY_PLAYING:
             level_text = self.font.render(f"Level: {self.story_level}/{STORY_TOTAL_LEVELS}", True, (255, 255, 255))
-            self.screen.blit(level_text, (220, 20))
-            # Zobraz info o bombách
-            bombs_text = self.font.render(f"Bomby: {self.player.current_bomb_count}/{self.player.max_bombs}", True, (255, 200, 100))
-            self.screen.blit(bombs_text, (220, 50))
+            self.screen.blit(level_text, (220, powerup_y))
+            powerup_y += 30
+        
+        if self.player.speed_boost_timer > 0:
+            speed_text = self.font.render(f"⚡ Rychlost ({self.player.speed_boost_timer // 15 + 1}s)", True, (100, 255, 100))
+            self.screen.blit(speed_text, (220, powerup_y))
+            powerup_y += 25
+        if self.player.bigger_explosion_timer > 0:
+            explosion_text = self.font.render(f"💥 Velká exploze ({self.player.bigger_explosion_timer // 15 + 1}s)", True, (255, 100, 255))
+            self.screen.blit(explosion_text, (220, powerup_y))
 
         # Progress bar pro bomby
         if len(self.bombs) > 0:
@@ -573,6 +602,7 @@ class BoomerManGame:
         self.enemies.empty()
         self.bombs.empty()
         self.explosions.empty()
+        self.powerups.empty()
         self.explosion_particles = []
         self.screen_shake = 0
 
@@ -596,6 +626,7 @@ class BoomerManGame:
         self.enemies.empty()
         self.bombs.empty()
         self.explosions.empty()
+        self.powerups.empty()
         self.explosion_particles = []
         self.screen_shake = 0
         self.biome = None

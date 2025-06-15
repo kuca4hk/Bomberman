@@ -7,7 +7,7 @@ from utils.isometric_utils import IsometricUtils
 from domain.entity.biome import Biome
 
 # Story mode konstanty
-STORY_TOTAL_LEVELS = 2
+STORY_TOTAL_LEVELS = 5
 
 
 def create_game_map(grid_width, grid_height):
@@ -135,12 +135,13 @@ def create_sounds():
         "player_hit": pygame.mixer.Sound("assets/sounds/player_hit.wav"),
     }
 
-def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_group, all_sprites_group):
+def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_group, all_sprites_group, powerups_group=None):
     """Zpracuje explozi bomby a vytvoří exploze ve všech směrech"""
     x, y = bomb.grid_x, bomb.grid_y
     power = bomb.power
     explosion_particles = []
     score_gained = 0
+    spawned_powerups = []
 
     # Střed exploze
     explosion = Explosion(x, y, iso_utils)
@@ -158,6 +159,15 @@ def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_
                 if game_map[ny, nx] == 2:  # Zničitelná stěna
                     game_map[ny, nx] = 0
                     score_gained += 10
+                    
+                    # Šance na spawn powerupu (20% chance)
+                    if powerups_group is not None and random.random() < 0.2:
+                        from domain.entity.powerup import PowerUp
+                        powerup = PowerUp(nx, ny, iso_utils)
+                        powerups_group.add(powerup)
+                        all_sprites_group.add(powerup)
+                        spawned_powerups.append(powerup)
+                    
                     # Isometrické částice při destrukci
                     screen_x, screen_y = iso_utils.grid_to_screen(nx, ny)
                     for _ in range(8):
@@ -174,7 +184,7 @@ def explode_bomb(bomb, game_map, grid_width, grid_height, iso_utils, explosions_
                 explosions_group.add(explosion)
                 all_sprites_group.add(explosion)
 
-    return explosion_particles, score_gained
+    return explosion_particles, score_gained, spawned_powerups
 
 
 def check_collisions(player, enemies, explosions, lives, score):
