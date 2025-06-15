@@ -685,8 +685,9 @@ class BoomerManGame:
 
         # Vytvoření hráče
         self.player = Player(1, 1, self.iso_utils)
-        # Nastaví počet bomb podle levelu
+        # Nastaví počet bomb podle levelu + 1 jako default
         self.player.set_max_bombs_for_level(self.story_level)
+        self.player.max_bombs += 1  # +1 bomba navíc
         self.all_sprites.add(self.player)
         self.players.add(self.player)
 
