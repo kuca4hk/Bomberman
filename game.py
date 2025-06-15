@@ -467,6 +467,22 @@ class BoomerManGame:
             scaled_bomb = pygame.transform.scale(bomb_sprite, (int(pulse_bomb), int(pulse_bomb)))
             bomb_rect = scaled_bomb.get_rect(center=pos)
             self.screen.blit(scaled_bomb, bomb_rect)
+        
+        # Autoři - levý dolní roh
+        authors = [
+            ("Karel Vrablik", "Game Developer & Game Design"),
+            ("Iurii Pavlov", "Game Design & Quality Tester"),
+            ("Enriko Hrcik", "Quality Tester & Game Director"),
+            ("Jiri Kerner", "Game Director & Graphics Design"),
+            ("Jakub Kucera", "Game Developer & Quality Tester")
+        ]
+        
+        small_font = pygame.font.Font(None, 20)
+        y_offset = self.HEIGHT - 120
+        for author, roles in authors:
+            author_text = small_font.render(f"{author}: {roles}", True, (150, 150, 150))
+            self.screen.blit(author_text, (80, y_offset))
+            y_offset += 22
     
     def draw_game(self):
         """Draws current level with its items."""
