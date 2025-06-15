@@ -9,6 +9,13 @@ from utils.astar import AStar
 
 
 class Enemy(pygame.sprite.Sprite):
+    """
+    Class for enemy sprite. Has sprite, x, y, and "speed" as move_timer
+
+    Is controlled by simple reflex agent combined with A* algorithm for finding shortest path to player.
+    Enemy is trying to get to player if there is a path.
+    When there is a bbomb or explosion to clode, enemy dodge it.
+    """
     def __init__(self, x, y, iso_utils):
         super().__init__()
         self.iso_utils = iso_utils
@@ -35,6 +42,26 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.bottom = screen_y + offset_y - float_offset
 
     def update(self, game_map, grid_width, grid_height, player, dangers):
+        """
+        Moves of the enemy.
+        If there is a path to player enemy follows the player, if not enemy tries to at least get close to the player.
+        When there is some kind of danger (bomb or explosion), the enemy waits until it disappears and then continues with following player
+
+        Inputs:
+        -------
+        game_map : 2d array
+            game map, for determining valid moves and finding a path to player via A*
+        grid_width : integer
+            width of the map, used for determining valid moves
+        grid_height : integer
+            height of the map, used for determining valid moves
+        player
+            enemy follows the player
+        dangers
+            dangers of the game that can kill the enemy, bombs and explosions
+            enemy will dodge them and avoid getting close to them (see bomb_proximity and explosion_proximity)
+            bbombs are also used for validating moves, enemy cannot go through the bomb
+        """
         self.animation_frame += 0.2
         self.move_timer += 1
 
