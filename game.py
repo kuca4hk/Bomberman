@@ -524,9 +524,9 @@ class BoomerManGame:
         
         # Autoři - levý dolní roh
         authors = [
-            ("Karel Vrablik", "Game Developer & Game Design"),
+            ("Karel Vrabik", "Game Developer & Game Design"),
             ("Iurii Pavlov", "Game Design & Quality Tester"),
-            ("Enriko Hrcik", "Quality Tester & Game Director"),
+            ("Enriko Hricik", "Quality Tester & Game Director"),
             ("Jiri Kerner", "Game Director & Graphics Design"),
             ("Jakub Kucera", "Game Developer & Quality Tester")
         ]
