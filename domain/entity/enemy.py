@@ -41,7 +41,7 @@ class Enemy(pygame.sprite.Sprite):
         if self.move_timer > 10:
             self.move_timer = 0
             bomb_proximity = 4
-            explosion_proximity = 1
+            explosion_proximity = 2
             danger_proximity = 4
             dx = 0
             dy = 0
@@ -49,17 +49,15 @@ class Enemy(pygame.sprite.Sprite):
 
             # pronásledování hráče
             try:
-                astar=AStar(game_map)
-                path=astar.find_path((self.grid_x,self.grid_y),(player.grid_x,player.grid_y))
-            except :
+                astar = AStar(game_map)
+                path = astar.find_path((self.grid_x, self.grid_y), (player.grid_x, player.grid_y))
+            except:
                 traceback.print_exc()
-                path=[]
-            if len(path)>1:
-                print(path[1],self.grid_x,self.grid_y)
-                print(path[1][0],path[1][1])
-                dx=path[1][0]-self.grid_x
-                dy=path[1][1]-self.grid_y
-            else:#není li cesta
+                path = []
+            if len(path) > 1:
+                dx = path[1][0] - self.grid_x
+                dy = path[1][1] - self.grid_y
+            else:  # není li cesta
                 if random.random() < 0.5:
                     if self.grid_x - player.grid_x > 0:
                         dx = -1
@@ -71,10 +69,7 @@ class Enemy(pygame.sprite.Sprite):
                     else:
                         dy = 1
 
-
-
-
-            for danger in dangers:#TODO seřadit nebezpečí od nejbližšího
+            for danger in sorted(dangers, key=lambda d: (d.grid_x - self.grid_x)**2 + (d.grid_y - self.grid_y)**2):
                 if type(danger) == domain.entity.bomb.Bomb:
                     danger_proximity=bomb_proximity
                 if type(danger) == domain.entity.explosion.Explosion:
