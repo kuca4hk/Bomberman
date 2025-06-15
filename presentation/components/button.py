@@ -2,6 +2,12 @@ import pygame
 
 
 class Button:
+    """
+    Class for button.
+    Used in wellcome screen, menu, endgame screen etc.
+
+    has x, y, width, height, text that is displayed on the button, text font, backgroung color (as color) and text color
+    """
     def __init__(self, x, y, width, height, text, font, color=(100, 100, 100), text_color=(255, 255, 255)):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text

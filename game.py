@@ -14,7 +14,14 @@ from game_logic import (create_game_map, create_isometric_sprites, create_sounds
 from domain.entity.biome import Biome
 
 class BoomerManGame:
+    """
+    Main class containing the game
+    """
     def __init__(self):
+        """
+        Iniitializes the game
+        prepares map width and height, fps, wellcome screen (with buttons)
+        """
         pygame.init()
         self.WIDTH = 1000
         self.HEIGHT = 700
@@ -81,6 +88,9 @@ class BoomerManGame:
         self.sounds['background'].play(loops=-1).set_volume(0.1)
     
     def init_game_world(self):
+        """
+        generates the game map via create_game_map, adds player and adds enemy/ies
+        """
         self.grid_width = 15
         self.grid_height = 11
         
@@ -177,6 +187,9 @@ class BoomerManGame:
             self.check_game_collisions()
     
     def update_player(self):
+        """
+        Processes the movements of the player.
+        """
         moving = False
         
         # Update hráče (pro imunitu)
@@ -200,6 +213,11 @@ class BoomerManGame:
         self.player.animate(moving)
     
     def place_bomb(self):
+        """
+        Processe the bomb placement.
+        Checks whether the player can place another bomb.
+        Creates new sprite for the bomb.
+        """
         # Zkontroluj, jestli hráč může položit bombu (limit podle levelu)
         if not self.player.can_place_bomb():
             return
@@ -223,6 +241,12 @@ class BoomerManGame:
             self.sounds['bomb_place'].play()
     
     def update_sprites(self):
+        """
+        Processes the bombs, explosions and enemies sprites.
+        Processes whether the bomb should explode and removes the bomb sprite and adds the corresponding explosion sprites.
+        Procecces the explosions and removes them when they should be removed.
+        Processes the enemies and their moves.
+        """
         # Update bomb sprites
         for bomb in self.bombs.copy():
             if bomb.update():  # Vrací True pokud má explodovat

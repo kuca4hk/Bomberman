@@ -2,11 +2,32 @@ from collections import deque
 
 
 class AStar:
+    """
+    Class for standard A* algorithm
+
+    it is initialized with game map, method find_path finds the shortest path from start to goal and returns it
+    """
     def __init__(self, game_map):
         self.height, self.width = game_map.shape
         self.game_map = game_map
 
     def find_path(self, start, goal):
+        """
+        returns the shortest path from start to goal
+
+        uses the A* algorithm
+
+        Inputs:
+        -------
+        start : tuple
+            x and y of the start position
+        goal : tuple
+            x and y of the goal position
+
+        Returns:
+        --------
+            path as a list of positions, first position is the start position and lat is the goal position
+        """
 
         d = deque()
 
@@ -62,10 +83,29 @@ class AStar:
         return path
 
     def count_heu(self, node, goal):
+        """
+        Function returning the heuristic of entered node.
+        Heuristic is counted as Manhattan distance between the node and the goal
+
+        Input:
+        ------
+        node
+            node for counting the heurostic, has x and y
+        goal
+            x nad y of the goal
+
+        Returns:
+        --------
+            counted heuristic as a number
+        """
         heu = abs(node[0] - goal[0]) + abs(node[1] - goal[1])
         return heu
 
     def get_valid_neighbours(self, su, goal):
+        """
+        Function returning valid neighbours of the su.
+        Valid neighbour is node next to the entered node (su) which is not a wall
+        """
         neighbours = []
         neighbour = (su[0], su[1] - 1, su[2] + 1)
         if ((self.is_valid_xy(neighbour[0], neighbour[1]) and self.is_empty(neighbour[0], neighbour[1]))):
@@ -115,6 +155,7 @@ class AStar:
         return False
 
     def is_valid_xy(self, x, y):
+        """Function that checks wheter entered x and y are valid i.e. are empty/are not containing wall"""
         if x >= 0 and x < self.width and y >= 0 and y < self.height and self.game_map[y, x] == 0:
             return True
         return False
