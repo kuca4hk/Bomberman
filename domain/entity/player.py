@@ -22,6 +22,13 @@ class Player(pygame.sprite.Sprite):
         self.bomb_placed_position = None  # Pozice kde hráč položil bombu (může z ní odejít)
         self.max_bombs = 1  # Počet bomb které může hráč mít současně
         self.current_bomb_count = 0  # Aktuální počet položených bomb
+        
+        # Powerup efekty
+        self.active_powerups = {}  # Slovník aktivních powerupů s časem konce
+        self.unlimited_bombs_timer = 0  # Časovač pro neomezené bomby
+        self.speed_boost_timer = 0      # Časovač pro rychlost
+        self.bigger_explosion_timer = 0  # Časovač pro větší exploze
+        
         self.create_sprite()
 
     def create_sprite(self):
@@ -105,6 +112,14 @@ class Player(pygame.sprite.Sprite):
             self.immunity_timer -= 1
             # Aktualizuj sprite pro blikání
             self.create_sprite()
+            
+        # Update powerup timery
+        if self.unlimited_bombs_timer > 0:
+            self.unlimited_bombs_timer -= 1
+        if self.speed_boost_timer > 0:
+            self.speed_boost_timer -= 1
+        if self.bigger_explosion_timer > 0:
+            self.bigger_explosion_timer -= 1
 
     def set_facing_direction(self, direction):
         """
@@ -121,10 +136,16 @@ class Player(pygame.sprite.Sprite):
     
     def can_place_bomb(self):
         """Zkontroluje zda může hráč položit bombu"""
+        # Pokud má unlimited bombs, může vždy
+        if self.unlimited_bombs_timer > 0:
+            return True
         return self.current_bomb_count < self.max_bombs
     
     def add_bomb(self):
         """Zvýší počet položených bomb"""
+        # Pokud má unlimited bombs, nezvyšuj počítadlo
+        if self.unlimited_bombs_timer > 0:
+            return True
         if self.current_bomb_count < self.max_bombs:
             self.current_bomb_count += 1
             return True
@@ -132,9 +153,38 @@ class Player(pygame.sprite.Sprite):
     
     def remove_bomb(self):
         """Sníží počet bomb po explozi"""
+        # Pokud má unlimited bombs, nesniž počítadlo
+        if self.unlimited_bombs_timer > 0:
+            return
         if self.current_bomb_count > 0:
             self.current_bomb_count -= 1
     
     def set_max_bombs_for_level(self, level):
         """Nastaví maximální počet bomb podle levelu"""
         self.max_bombs = min(5, level)  # Level 1: 1 bomba, Level 2: 2 bomby, Level 3: 3 bomby, atd. max 5
+    
+    def apply_powerup(self, powerup_type):
+        """Aplikuje efekt powerupu"""
+        from domain.entity.powerup import PowerUpType
+        
+        if powerup_type == PowerUpType.UNLIMITED_BOMBS:
+            self.unlimited_bombs_timer = 75  # 5 sekund při 15 FPS
+        elif powerup_type == PowerUpType.EXTRA_BOMB:
+            self.max_bombs += 1  # Permanentní zvýšení
+        elif powerup_type == PowerUpType.SPEED_BOOST:
+            self.speed_boost_timer = 75  # 5 sekund při 15 FPS
+        elif powerup_type == PowerUpType.BIGGER_EXPLOSION:
+            self.bigger_explosion_timer = 75  # 5 sekund při 15 FPS
+    
+    def get_bomb_power(self):
+        """Vrátí sílu bomb (základní nebo s bonusem)"""
+        base_power = 2
+        if self.bigger_explosion_timer > 0:
+            return base_power + 2  # Větší exploze
+        return base_power
+    
+    def get_move_speed(self):
+        """Vrátí rychlost pohybu (pro budoucí použití)"""
+        if self.speed_boost_timer > 0:
+            return 2  # 2x rychlejší
+        return 1  # Normální rychlost
