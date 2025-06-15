@@ -1,6 +1,12 @@
+import traceback
+
 import pygame
 import math
 import random
+
+import domain.entity.bomb
+from utils.astar import AStar
+
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, x, y, iso_utils):
@@ -28,14 +34,65 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.centerx = screen_x + offset_x
         self.rect.bottom = screen_y + offset_y - float_offset
 
-    def update(self, game_map, grid_width, grid_height, bombs=None):
+    def update(self, game_map, grid_width, grid_height, player, dangers):
         self.animation_frame += 0.2
         self.move_timer += 1
 
-        if self.move_timer > 60:
+        if self.move_timer > 10:
             self.move_timer = 0
-            directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-            dx, dy = random.choice(directions)
+            bomb_proximity = 4
+            explosion_proximity = 2
+            danger_proximity = 4
+            dx = 0
+            dy = 0
+
+
+            # pronásledování hráče
+            try:
+                astar = AStar(game_map)
+                path = astar.find_path((self.grid_x, self.grid_y), (player.grid_x, player.grid_y))
+            except:
+                traceback.print_exc()
+                path = []
+            if len(path) > 1:
+                dx = path[1][0] - self.grid_x
+                dy = path[1][1] - self.grid_y
+            else:  # není li cesta
+                if random.random() < 0.5:
+                    if self.grid_x - player.grid_x > 0:
+                        dx = -1
+                    else:
+                        dx = 1
+                else:
+                    if self.grid_y - player.grid_y > 0:
+                        dy = -1
+                    else:
+                        dy = 1
+
+            for danger in sorted(dangers, key=lambda d: (d.grid_x - self.grid_x)**2 + (d.grid_y - self.grid_y)**2):
+                if type(danger) == domain.entity.bomb.Bomb:
+                    danger_proximity=bomb_proximity
+                if type(danger) == domain.entity.explosion.Explosion:
+                    danger_proximity=explosion_proximity
+
+                # jestli utíkat
+                d_x_dist=self.grid_x - danger.grid_x
+                d_y_dist=self.grid_y - danger.grid_y
+                if abs(d_x_dist) < danger_proximity and abs(d_y_dist) < danger_proximity:
+                    # kudy utíkat
+                    if abs(d_x_dist) > abs(d_y_dist):
+                        if d_x_dist > 0:
+                            dx = 1
+                        else:
+                            dx = -1
+                        break
+                    else:
+                        if d_y_dist > 0:
+                            dy = 1
+                        else:
+                            dy = -1
+                        break
+
             new_x = self.grid_x + dx
             new_y = self.grid_y + dy
 
@@ -45,6 +102,7 @@ class Enemy(pygame.sprite.Sprite):
                 
                 # Kontrola bomb - enemy nemůže projít políčkem s bombou
                 bomb_collision = False
+                bombs=[d for d in dangers if isinstance(d, domain.entity.bomb.Bomb)]
                 if bombs:
                     for bomb in bombs:
                         if bomb.grid_x == new_x and bomb.grid_y == new_y:
